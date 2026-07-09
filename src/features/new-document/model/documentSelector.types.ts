@@ -8,6 +8,7 @@ export interface UnitContext {
 
 export interface DocumentOption {
   id: string;
+  backendValue: string;
   label: string;
   shortLabel?: string;
   description: string;
@@ -41,17 +42,6 @@ export interface DocumentSelectorContext {
   user: AuthenticatedUser;
   unit: UnitContext | null;
   config: DocumentSelectorConfig;
-}
-
-export interface CreateDocumentDraftRequest {
-  dosageFormId: string;
-  documentTypeId: string;
-  unitId: string;
-}
-
-export interface CreateDocumentDraftResult {
-  draftId: string;
-  nextRoute: string;
 }
 
 export type DocumentSelectorScenario =

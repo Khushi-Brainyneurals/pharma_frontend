@@ -1,4 +1,3 @@
-import { ROUTES } from "../../../app/routing/routes";
 import type { AuthenticatedUser } from "../../auth/api/auth.types";
 import {
   DOCUMENT_SELECTOR_STEPS,
@@ -6,15 +5,12 @@ import {
   DOSAGE_FORM_OPTIONS,
 } from "../model/documentSelector.config";
 import type {
-  CreateDocumentDraftRequest,
-  CreateDocumentDraftResult,
   DocumentSelectorContext,
   DocumentSelectorScenario,
   UnitContext,
 } from "../model/documentSelector.types";
 
 const LOAD_DELAY_MS = 350;
-const CREATE_DELAY_MS = 900;
 
 export async function loadDocumentSelectorContext(
   user: AuthenticatedUser,
@@ -32,22 +28,6 @@ export async function loadDocumentSelectorContext(
       documentTypes: scenario === "empty-config" ? [] : DOCUMENT_TYPE_OPTIONS,
       steps: DOCUMENT_SELECTOR_STEPS,
     },
-  };
-}
-
-export async function createDocumentDraft(
-  request: CreateDocumentDraftRequest,
-  scenario: DocumentSelectorScenario,
-): Promise<CreateDocumentDraftResult> {
-  await wait(CREATE_DELAY_MS);
-
-  if (scenario === "creation-error") {
-    throw new Error("DOCUMENT_DRAFT_CREATE_FAILED");
-  }
-
-  return {
-    draftId: `draft-${request.unitId}-${request.dosageFormId}-${request.documentTypeId}`,
-    nextRoute: ROUTES.documentInputs,
   };
 }
 

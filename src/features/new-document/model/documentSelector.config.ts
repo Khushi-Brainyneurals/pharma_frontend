@@ -17,10 +17,10 @@ export const RELEASE_TOOLTIP =
 
 export const DOCUMENT_SELECTOR_STEPS: DocumentStep[] = [
   { id: "type", label: "Type" },
-  { id: "inputs", label: "Core Inputs" },
+  { id: "inputs", label: "Core inputs" },
   { id: "preview", label: "Preview" },
   { id: "cover-bom", label: "Cover + BOM" },
-  { id: "stages", label: "Select Stages" },
+  { id: "stages", label: "Select stages" },
   { id: "stage-input", label: "Stage input" },
   { id: "generate-submit", label: "Generate & submit" },
 ];
@@ -28,6 +28,7 @@ export const DOCUMENT_SELECTOR_STEPS: DocumentStep[] = [
 export const DOSAGE_FORM_OPTIONS: DocumentOption[] = [
   {
     id: "tablet",
+    backendValue: "tablet",
     label: "Tablet",
     description: "Compressed solid dose",
     available: true,
@@ -35,6 +36,7 @@ export const DOSAGE_FORM_OPTIONS: DocumentOption[] = [
   },
   {
     id: "capsule",
+    backendValue: "capsule",
     label: "Capsule",
     description: "",
     available: false,
@@ -43,6 +45,7 @@ export const DOSAGE_FORM_OPTIONS: DocumentOption[] = [
   },
   {
     id: "cream",
+    backendValue: "cream",
     label: "Cream",
     description: "",
     available: false,
@@ -51,6 +54,7 @@ export const DOSAGE_FORM_OPTIONS: DocumentOption[] = [
   },
   {
     id: "ointment",
+    backendValue: "ointment",
     label: "Ointment",
     description: "",
     available: false,
@@ -59,6 +63,7 @@ export const DOSAGE_FORM_OPTIONS: DocumentOption[] = [
   },
   {
     id: "powder",
+    backendValue: "powder",
     label: "Powder",
     description: "",
     available: false,
@@ -67,6 +72,7 @@ export const DOSAGE_FORM_OPTIONS: DocumentOption[] = [
   },
   {
     id: "oral-liquid",
+    backendValue: "oral-liquid",
     label: "Oral Liquid",
     description: "",
     available: false,
@@ -78,6 +84,7 @@ export const DOSAGE_FORM_OPTIONS: DocumentOption[] = [
 export const DOCUMENT_TYPE_OPTIONS: DocumentOption[] = [
   {
     id: "bmr",
+    backendValue: "bmr",
     label: "Batch Manufacturing Record",
     shortLabel: "BMR",
     description: "Tablet dosage form",
@@ -86,6 +93,7 @@ export const DOCUMENT_TYPE_OPTIONS: DocumentOption[] = [
   },
   {
     id: "bpr",
+    backendValue: "bpr",
     label: "Batch Packaging Record",
     shortLabel: "BPR",
     description: "",
@@ -95,6 +103,7 @@ export const DOCUMENT_TYPE_OPTIONS: DocumentOption[] = [
   },
   {
     id: "pvp",
+    backendValue: "pvp",
     label: "Process Validation Protocol",
     shortLabel: "PVP",
     description: "",
@@ -104,6 +113,7 @@ export const DOCUMENT_TYPE_OPTIONS: DocumentOption[] = [
   },
   {
     id: "pvr",
+    backendValue: "pvr",
     label: "Process Validation Report",
     shortLabel: "PVR",
     description: "",
@@ -119,5 +129,5 @@ export const DOCUMENT_SIDEBAR_ITEMS: SidebarItem[] = [
   { id: "version-history", label: "Version history" },
   { id: "notifications", label: "Notifications" },
   { id: "audit-trail", label: "Audit trail" },
-  { id: "password", label: "Password" },
+  { id: "master-data", label: "Master data" },
 ];

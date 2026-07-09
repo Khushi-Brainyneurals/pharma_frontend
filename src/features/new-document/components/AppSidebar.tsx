@@ -1,13 +1,13 @@
 import {
   Bell,
-  ClipboardList,
+  ClipboardClock,
   FileClock,
   FilePlus,
   History,
-  KeyRound,
   LayoutDashboard,
   Loader2,
   LogOut,
+  ReceiptText,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -27,8 +27,8 @@ const iconMap = {
   "status-board": LayoutDashboard,
   "version-history": History,
   notifications: Bell,
-  "audit-trail": ClipboardList,
-  password: KeyRound,
+  "audit-trail": ClipboardClock,
+  "master-data": ReceiptText,
 };
 
 export function AppSidebar({ user }: AppSidebarProps) {

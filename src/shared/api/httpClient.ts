@@ -12,6 +12,10 @@ export const httpClient = axios.create({
 httpClient.interceptors.request.use((config) => {
   const accessToken = getPersistedSession()?.accessToken;
 
+  if (config.data instanceof FormData) {
+    config.headers.delete("Content-Type");
+  }
+
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }

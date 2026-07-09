@@ -1,7 +1,7 @@
 export const USER_ROLES = {
   SUPER_ADMIN: "superadmin",
   ADMIN: "admin",
-  PREPARED_BY: "preparedby",
+  PREPARED_BY: "preparer",
   REVIEWER_QA: "reviewer_qa",
   REVIEWER_PR: "reviewer_pr",
   APPROVED_BY: "approvedby",

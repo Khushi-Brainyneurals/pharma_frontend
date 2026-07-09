@@ -14,7 +14,7 @@ export function SelectionSummary({
 }: SelectionSummaryProps) {
   const hasSelection = Boolean(dosageForm && documentType);
   const message = isCreating
-    ? "Minting r1 · writing initiation audit entry"
+    ? "Creating document draft..."
     : hasSelection
       ? `You're creating: ${dosageForm?.label} · ${documentType?.label}`
       : "Select a dosage form and document type to continue";

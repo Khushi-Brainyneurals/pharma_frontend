@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { env } from "../shared/config/env";
+import { CoreInputsPage } from "../features/core-inputs/pages/CoreInputsPage";
 import { NewDocumentSelectorPage } from "../features/new-document/pages/NewDocumentSelectorPage";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { LoginStatesPage } from "../features/auth/pages/LoginStatesPage";
@@ -14,6 +15,8 @@ export function App() {
       {env.isDev ? <Route path="/login/states" element={<LoginStatesPage />} /> : null}
       <Route element={<ProtectedRoute />}>
         <Route path={ROUTES.newDocument} element={<NewDocumentSelectorPage />} />
+        <Route path={ROUTES.documentInputs} element={<CoreInputsPage />} />
+        <Route path={ROUTES.documentPreview} element={<ProtectedPlaceholderPage />} />
         <Route path={ROUTES.statusBoard} element={<ProtectedPlaceholderPage />} />
       </Route>
       <Route path="*" element={<Navigate to={ROUTES.login} replace />} />
