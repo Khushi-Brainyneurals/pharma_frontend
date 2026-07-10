@@ -24,29 +24,42 @@ export function AppHeader({ user, unit, isLoadingUnit = false }: AppHeaderProps)
   }, []);
 
   return (
-    <header className="sticky top-0 z-20 flex min-h-topbar items-center border-b border-border bg-surface p-3 text-small text-text lg:px-4">
+    <header className="sticky top-0 z-20 flex min-h-topbar items-center border-b border-border bg-surface p-2.5 text-small text-text lg:px-4">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <img className="size-8 shrink-0" src="/pharma-logo.png" alt="" />
-        <div className="min-w-0">
-          <p className="text-small font-semibold leading-5">PharmaDoc AI</p>
-          <h1 className="truncate text-h2 font-semibold">
-            New document — batch manufacturing record
-          </h1>
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="shrink-0 text-h2 font-semibold leading-5">
+            PharmaDoc AI
+          </p>
+
+          <span className="text-muted-foreground">|</span>
+          <span className="truncate text-h2 font-semibold">
+            New document
+          </span>
         </div>
       </div>
 
       <div className="ml-4 hidden items-center gap-3 md:flex">
-        {isLoadingUnit ? (
-          <span className="h-7 w-20 animate-pulse rounded-pill bg-muted" aria-hidden="true" />
-        ) : (
-          <span className="rounded-pill border border-primary/20 bg-accent-soft px-3 py-1 text-small font-semibold text-primary-dark">
-            {unit?.id ?? "No Unit"}
+        <div className="inline-flex items-center gap-2 rounded-pill border border-border bg-muted px-3 py-1 text-small">
+          {isLoadingUnit ? (
+            <span
+              className="h-4 w-16 animate-pulse rounded-pill bg-border"
+              aria-hidden="true"
+            />
+          ) : (
+            <span className="font-semibold text-primary-dark">
+              {unit?.id ?? "No Unit"}
+            </span>
+          )}
+
+          <span className="text-[var(--text-subtle)]">•</span>
+
+          <span className="font-small text-subdued">
+            {user ? USER_ROLE_LABELS[user.role] : "Prepared By"}
           </span>
-        )}
-        <span className="text-small font-medium text-subdued">
-          {user ? USER_ROLE_LABELS[user.role] : "Prepared By"}
-        </span>
-        <span className="inline-flex items-center gap-2 rounded-pill border border-border bg-muted px-3 py-1 text-small text-subdued">
+        </div>
+
+        <span className="inline-flex items-center gap-2 text-small text-subdued">
           <Clock3 className="size-4" aria-hidden="true" />
           {time}
         </span>
@@ -59,7 +72,7 @@ export function AppHeader({ user, unit, isLoadingUnit = false }: AppHeaderProps)
         </button>
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-control border border-border px-2 py-1.5 text-left transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          className="inline-flex items-center gap-2 rounded-pill border border-border px-1.5 py-1.5 text-left transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           aria-label="User menu"
         >
           <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary text-micro font-semibold text-white">

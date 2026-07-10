@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle } from "lucide-react";
+import { Check, CheckCircle2, Circle } from "lucide-react";
 import type { DocumentStep } from "../model/documentSelector.types";
 
 interface DocumentStepperProps {
@@ -20,14 +20,14 @@ export function DocumentStepper({ steps, activeStepId }: DocumentStepperProps) {
             <li key={step.id} className="flex min-w-0 flex-1 items-center gap-2">
               <span
                 className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-micro font-semibold ${
-                  isActive
+                  isActive || isComplete
                     ? "border-primary bg-primary text-white"
                     : "border-border bg-muted text-subdued"
                 }`}
                 aria-current={isActive ? "step" : undefined}
               >
                 {isComplete ? (
-                  <CheckCircle2 className="size-4" aria-hidden="true" />
+                  <Check className="size-4" aria-hidden="true" />
                 ) : (
                   index + 1
                 )}
@@ -49,8 +49,12 @@ export function DocumentStepper({ steps, activeStepId }: DocumentStepperProps) {
 
       <div className="flex items-center gap-3 rounded-control border border-border bg-muted px-3 py-2 md:hidden">
         <Circle className="size-4 fill-primary text-primary" aria-hidden="true" />
-        <span className="text-small font-semibold text-text">Step 1 of {steps.length}</span>
-        <span className="text-small text-subdued">Type</span>
+        <span className="text-small font-semibold text-text">
+          Step {activeIndex >= 0 ? activeIndex + 1 : 1} of {steps.length}
+        </span>
+        <span className="text-small text-subdued">
+          {steps[activeIndex]?.label ?? steps[0]?.label ?? "Step"}
+        </span>
       </div>
     </div>
   );

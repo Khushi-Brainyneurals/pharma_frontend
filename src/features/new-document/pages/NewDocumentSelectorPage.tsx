@@ -1,11 +1,13 @@
 import { Loader2 } from "lucide-react";
 import type { KeyboardEvent } from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ROUTES } from "../../../app/routing/routes";
+import { getDocumentInputsRoute, ROUTES } from "../../../app/routing/routes";
+import { getApiErrorMessage } from "../../../shared/api/apiError";
 import { LoadingSpinner } from "../../../shared/ui/LoadingSpinner";
 import { USER_ROLE_LABELS, USER_ROLES } from "../../auth/model/roles";
 import { useAuthStore } from "../../auth/state/auth.store";
+import { createBmrDocument } from "../api/documents.api";
 import { AppHeader } from "../components/AppHeader";
 import { AppSidebar } from "../components/AppSidebar";
 import { DocumentOptionCard } from "../components/DocumentOptionCard";
@@ -14,7 +16,6 @@ import { GuardPanel } from "../components/GuardPanel";
 import { SelectionSummary } from "../components/SelectionSummary";
 import { useDocumentSelectorData } from "../hooks/useDocumentSelectorData";
 import type { DocumentOption, DocumentSelectorState } from "../model/documentSelector.types";
-import { createDocumentDraft } from "../services/documentSelector.service";
 
 const INITIAL_SELECTION: DocumentSelectorState = {
   dosageFormId: null,
@@ -24,10 +25,11 @@ const INITIAL_SELECTION: DocumentSelectorState = {
 export function NewDocumentSelectorPage() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const { context, isLoading, error, scenario } = useDocumentSelectorData(user);
+  const { context, isLoading, error } = useDocumentSelectorData(user);
   const [selection, setSelection] = useState<DocumentSelectorState>(INITIAL_SELECTION);
   const [isCreating, setIsCreating] = useState(false);
-  const [creationError, setCreationError] = useState(false);
+  const [creationError, setCreationError] = useState<string | null>(null);
+  const createInFlightRef = useRef(false);
 
   const config = context?.config;
   const selectedDosageForm = config?.dosageForms.find(
@@ -37,7 +39,9 @@ export function NewDocumentSelectorPage() {
     (option) => option.id === selection.documentTypeId,
   );
   const canCreate = user?.role === USER_ROLES.PREPARED_BY;
-  const isSelectionComplete = Boolean(selectedDosageForm && selectedDocumentType && context?.unit);
+  const isSelectionComplete = Boolean(
+    selectedDosageForm?.available && selectedDocumentType?.available && context?.unit,
+  );
   const hasAvailableDocumentTypes = Boolean(
     config?.documentTypes.some((option) => option.available),
   );
@@ -115,11 +119,11 @@ export function NewDocumentSelectorPage() {
             className="rounded-control border border-danger/20 bg-danger-soft px-4 py-3 text-small font-medium text-danger-ink"
             role="alert"
           >
-            Couldn't start a new document. Your selection is kept — retry.
+            {creationError}
           </div>
         ) : null}
 
-        <section>
+        <section aria-busy={isCreating}>
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-h3 font-semibold">Dosage form</h2>
           </div>
@@ -149,7 +153,7 @@ export function NewDocumentSelectorPage() {
           </div>
         </section>
 
-        <section>
+        <section aria-busy={isCreating}>
           <h2 className="text-h3 font-semibold">Document type</h2>
           <div
             className="mt-3 grid gap-3 md:grid-cols-2"
@@ -200,7 +204,7 @@ export function NewDocumentSelectorPage() {
             {isCreating ? (
               <span className="inline-flex items-center gap-2" aria-live="polite">
                 <LoadingSpinner />
-                Starting draft…
+                Creating document...
               </span>
             ) : creationError ? (
               "Retry"
@@ -230,35 +234,45 @@ export function NewDocumentSelectorPage() {
   ]);
 
   function selectDosageForm(optionId: string) {
-    setCreationError(false);
+    setCreationError(null);
     setSelection((current) => ({ ...current, dosageFormId: optionId }));
   }
 
   function selectDocumentType(optionId: string) {
-    setCreationError(false);
+    setCreationError(null);
     setSelection((current) => ({ ...current, documentTypeId: optionId }));
   }
 
   async function handleCreate() {
-    if (!context?.unit || !selectedDosageForm || !selectedDocumentType || isCreating) {
+    if (
+      !context?.unit ||
+      !selectedDosageForm?.available ||
+      !selectedDocumentType?.available ||
+      createInFlightRef.current
+    ) {
       return;
     }
 
-    setCreationError(false);
+    createInFlightRef.current = true;
+    setCreationError(null);
     setIsCreating(true);
 
     try {
-      await createDocumentDraft(
-        {
-          dosageFormId: selectedDosageForm.id,
-          documentTypeId: selectedDocumentType.id,
-          unitId: context.unit.id,
-        },
-        scenario,
+      const document = await createBmrDocument({
+        dosage_form: selectedDosageForm.backendValue,
+        doc_type: selectedDocumentType.backendValue,
+        user: user?.username ?? user?.id ?? "api",
+      });
+
+      navigate(getDocumentInputsRoute(document.document_id), {
+        state: { document },
+      });
+    } catch (requestError) {
+      setCreationError(
+        getApiErrorMessage(requestError, "Unable to create the document. Please try again."),
       );
-    } catch {
-      setCreationError(true);
     } finally {
+      createInFlightRef.current = false;
       setIsCreating(false);
     }
   }
