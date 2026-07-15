@@ -32,14 +32,16 @@ import { DocumentStepper } from "../../new-document/components/DocumentStepper";
 import { useDocumentSelectorData } from "../../new-document/hooks/useDocumentSelectorData";
 import { DOCUMENT_SELECTOR_STEPS } from "../../new-document/model/documentSelector.config";
 import { FileUploadCard, type FileUploadStatus } from "../components/FileUploadCard";
+import { useCoreInputsDraftStore } from "../state/coreInputsDraft.store";
 
 type CoreInputsLocationState = {
   document?: CreateBmrDocumentResponse;
+  coreInputsDraft?: CoreInputsFormState;
 };
 
 type FileField = "mfc" | "pp" | "otherDoc1" | "otherDoc2" | "otherDoc3";
 
-interface CoreInputsFormState {
+export interface CoreInputsFormState {
   mfc: File | null;
   pp: File | null;
   otherDoc1: File | null;
@@ -99,7 +101,11 @@ export function CoreInputsPage() {
   const { context, isLoading: isLoadingContext } = useDocumentSelectorData(user);
   const state = location.state as CoreInputsLocationState | null;
   const document = state?.document;
-  const [form, setForm] = useState<CoreInputsFormState>(INITIAL_FORM_STATE);
+  const setStoredDraft = useCoreInputsDraftStore((draftState) => draftState.setDraft);
+  const [form, setForm] = useState<CoreInputsFormState>(() => ({
+    ...INITIAL_FORM_STATE,
+    ...(useCoreInputsDraftStore.getState().drafts[documentId] ?? state?.coreInputsDraft),
+  }));
   const [touched, setTouched] = useState<Partial<Record<keyof CoreInputsFormState, boolean>>>({});
   const [fileIssues, setFileIssues] = useState<Partial<Record<FileField, string>>>({});
   const [fileAttachState, setFileAttachState] = useState<Partial<Record<FileField, FileAttachState>>>(
@@ -111,6 +117,10 @@ export function CoreInputsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitInFlightRef = useRef(false);
   const uploadTimersRef = useRef<Partial<Record<FileField, number>>>({});
+
+  useEffect(() => {
+    setStoredDraft(documentId, form);
+  }, [documentId, form, setStoredDraft]);
 
   useEffect(() => {
     return () => {
@@ -231,7 +241,7 @@ export function CoreInputsPage() {
       setSuccess(response);
       window.setTimeout(() => {
         navigate(getDocumentPreviewRoute(response.document_id), {
-          state: { coreInputs: response, document },
+          state: { coreInputs: response, coreInputsDraft: form, document },
         });
       }, 450);
     } catch (requestError) {
@@ -333,10 +343,10 @@ export function CoreInputsPage() {
                     label="Batch size"
                     value={form.batchSize}
                     error={visibleErrors.batchSize}
-                    placeholder="180,000"
+                    placeholder="180000"
                     isRequired
                     disabled={isSubmitting || Boolean(success)}
-                    helper="Everything scales to this. Whole tablets."
+                    helper="Everything scales to this in numbers."
                     onBlur={() => setTouched((current) => ({ ...current, batchSize: true }))}
                     onChange={handleFieldChange("batchSize")}
                   />
@@ -404,7 +414,7 @@ export function CoreInputsPage() {
                     onChange={handleFieldChange("footerTemplateNo")}
                   />
 
-                  <DisabledTemplateBlock />
+                  {/* <DisabledTemplateBlock /> */}
 
                   {batchSizeWarning ? (
                     <StatusBanner tone="warning" title="Batch size check" message={batchSizeWarning} />
@@ -497,7 +507,7 @@ function OptionalDocuments({
   return (
     <details className="rounded-control border border-dashed border-border bg-muted/60 p-4">
       <summary className="cursor-pointer text-small font-semibold text-text">
-        Other supporting documents (optional)
+        Other supporting documents
       </summary>
       <div className="mt-4 grid gap-4">
         <FileUploadCard

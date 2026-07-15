@@ -136,6 +136,57 @@ select {
   font: inherit;
 }
 
+@layer components {
+  .preview-button-primary,
+  .preview-button-secondary,
+  .preview-button-danger {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-control px-4 text-small font-semibold transition focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55;
+  }
+
+  .preview-button-primary {
+    @apply bg-primary text-white hover:bg-primary-dark disabled:bg-muted disabled:text-subdued;
+  }
+
+  .preview-button-secondary {
+    @apply border border-border bg-surface text-text hover:bg-muted;
+  }
+
+  .preview-button-danger {
+    @apply border border-danger/30 bg-danger-soft text-danger-ink hover:bg-danger/10;
+  }
+
+  .viewer-tool {
+    @apply inline-flex min-h-9 min-w-9 items-center justify-center rounded-control border border-border bg-surface text-subdued transition hover:bg-muted hover:text-text focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1;
+  }
+
+  .bom-input,
+  .bom-table-input {
+    @apply min-h-10 rounded-control border border-border bg-surface px-3 py-2 font-normal text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-subdued;
+  }
+
+  .bom-input {
+    @apply w-full;
+  }
+}
+
+.docx-preview-host .pharmadoc-word-wrapper {
+  background: transparent;
+  padding: 0;
+}
+
+.docx-preview-host section.pharmadoc-word {
+  margin: 0 auto 20px;
+  box-shadow: var(--shadow-overlay);
+}
+
+.cover-bom-docx-host section.pharmadoc-word {
+  margin-bottom: 28px;
+}
+
+.cover-bom-docx-host .pharmadoc-word-wrapper {
+  min-height: 100%;
+}
+
 @layer utilities {
   .document-grid {
     background-image:
