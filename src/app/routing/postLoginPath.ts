@@ -5,6 +5,10 @@ import { ROUTES } from "./routes";
 const DEFAULT_POST_LOGIN_PATH = ROUTES.statusBoard;
 
 export function getPostLoginPath(role: UserRole) {
+  if (role === USER_ROLES.ADMIN) {
+    return ROUTES.employeeManagement;
+  }
+
   if (role === USER_ROLES.PREPARED_BY) {
     return ROUTES.newDocument;
   }

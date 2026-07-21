@@ -10,6 +10,8 @@ import { LoginStatesPage } from "../features/auth/pages/LoginStatesPage";
 import { ProtectedRoute } from "../features/auth/routing/ProtectedRoute";
 import { ProtectedPlaceholderPage } from "./ProtectedPlaceholderPage";
 import { ROUTES } from "./routing/routes";
+import { AdminRoute } from "../features/employee-management/routing/AdminRoute";
+import { EmployeeManagementPage } from "../features/employee-management/pages/EmployeeManagementPage";
 
 export function App() {
   return (
@@ -23,6 +25,9 @@ export function App() {
         <Route path={ROUTES.documentCoverBom} element={<PreparedByCoverBomRoute><CoverBomPage /></PreparedByCoverBomRoute>} />
         <Route path={ROUTES.documentSelectStages} element={<ProtectedPlaceholderPage />} />
         <Route path={ROUTES.statusBoard} element={<ProtectedPlaceholderPage />} />
+        <Route element={<AdminRoute />}>
+          <Route path={ROUTES.employeeManagement} element={<EmployeeManagementPage />} />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to={ROUTES.login} replace />} />
     </Routes>

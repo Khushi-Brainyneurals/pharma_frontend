@@ -8,14 +8,16 @@ import {
   Loader2,
   LogOut,
   ReceiptText,
+  UsersRound,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../../app/routing/routes";
 import { logout } from "../../auth/api/auth.api";
 import type { AuthenticatedUser } from "../../auth/api/auth.types";
 import { getStoredRefreshToken } from "../../auth/storage/auth.storage";
 import { useAuthStore } from "../../auth/state/auth.store";
+import { USER_ROLES } from "../../auth/model/roles";
 import { DOCUMENT_SIDEBAR_ITEMS } from "../model/documentSelector.config";
 
 interface AppSidebarProps {
@@ -33,6 +35,7 @@ const iconMap = {
 
 export function AppSidebar({ user }: AppSidebarProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const clearSession = useAuthStore((state) => state.clearSession);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -62,9 +65,20 @@ export function AppSidebar({ user }: AppSidebarProps) {
     <aside className="hidden border-r border-border bg-surface lg:flex lg:h-full lg:w-sidebar-w lg:flex-col">
       <nav className="flex-1 px-3 py-4" aria-label="Primary">
         <ul className="space-y-1">
+          {user?.role === USER_ROLES.ADMIN ? (
+            <li>
+              <NavLink
+                to={ROUTES.employeeManagement}
+                className={({ isActive }) => `flex min-h-row-h items-center gap-3 rounded-control px-3 text-small font-medium transition focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${isActive ? "border border-primary/25 bg-accent-soft text-primary-dark" : "text-subdued hover:bg-muted hover:text-text"}`}
+              >
+                <UsersRound className="size-4 shrink-0" aria-hidden="true" />
+                <span>Employee Management</span>
+              </NavLink>
+            </li>
+          ) : null}
           {DOCUMENT_SIDEBAR_ITEMS.map((item) => {
             const Icon = iconMap[item.id as keyof typeof iconMap] ?? FileClock;
-            const isActive = item.id === "new-document";
+            const isActive = item.id === "new-document" && location.pathname === ROUTES.newDocument;
 
             return (
               <li key={item.id}>

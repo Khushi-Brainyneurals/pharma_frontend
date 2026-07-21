@@ -8,9 +8,15 @@ interface AppHeaderProps {
   user: AuthenticatedUser | null;
   unit: UnitContext | null;
   isLoadingUnit?: boolean;
+  title?: string;
 }
 
-export function AppHeader({ user, unit, isLoadingUnit = false }: AppHeaderProps) {
+export function AppHeader({
+  user,
+  unit,
+  isLoadingUnit = false,
+  title = "New document",
+}: AppHeaderProps) {
   const [time, setTime] = useState(() => formatTime(new Date()));
   const displayName = user?.displayName ?? user?.username ?? "User";
   const initials = getInitials(displayName);
@@ -34,7 +40,7 @@ export function AppHeader({ user, unit, isLoadingUnit = false }: AppHeaderProps)
 
           <span className="text-muted-foreground">|</span>
           <span className="truncate text-h2 font-semibold">
-            New document
+            {title}
           </span>
         </div>
       </div>

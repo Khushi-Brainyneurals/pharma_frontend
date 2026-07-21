@@ -92,19 +92,7 @@ export function CoverBomPage() {
   );
 }
 
-function Warnings({ warnings }: { warnings: string[] }) { 
-  return <div 
-      className="mb-4 rounded-card border border-draft-fg/30 bg-draft-bg px-4 py-3" 
-      role="alert"><div className="flex gap-3"><AlertTriangle 
-      className="mt-0.5 size-5 shrink-0 text-draft-fg" />
-    <div>
-      <h2 className="text-small font-semibold">Backend extraction warnings</h2>
-      <p className="mt-1 text-small text-subdued">Review these items against the generated document before proceeding.</p>
-      <ul className="mt-2 list-disc space-y-1 pl-5 text-small">{warnings.map((warning) => 
-        <li key={warning}>{warning}</li>)}
-      </ul>
-    </div>
-    </div></div>; }
+function Warnings({ warnings }: { warnings: string[] }) { return <div className="mb-4 rounded-card border border-draft-fg/30 bg-draft-bg px-4 py-3" role="alert"><div className="flex gap-3"><AlertTriangle className="mt-0.5 size-5 shrink-0 text-draft-fg" /><div><h2 className="text-small font-semibold">Backend extraction warnings</h2><p className="mt-1 text-small text-subdued">Review these items against the generated document before proceeding.</p><ul className="mt-2 list-disc space-y-1 pl-5 text-small">{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></div></div></div>; }
 function CoverBomError({ error, onRetry, onDashboard }: { error: CoverBomRequestError | null; onRetry: () => void; onDashboard: () => void }) { if (error?.kind === "version-conflict") return <PreviewStateCard icon={RotateCcw} title="A newer BOM version exists" message={error.message} tone="warning" actions={<button type="button" className="preview-button-primary" onClick={onRetry}><RefreshCw className="size-4" />Reload latest version</button>} />; if (error?.kind === "not-found") return <PreviewStateCard icon={FileQuestion} title="Document not found" message={error.message} tone="danger" actions={<button type="button" className="preview-button-secondary" onClick={onDashboard}><ArrowLeft className="size-4" />Back to dashboard</button>} />; return <PreviewStateCard icon={ServerOff} title="Cover + BOM unavailable" message={error?.message ?? "The Cover + BOM service is temporarily unavailable."} tone="danger" actions={<button type="button" className="preview-button-primary" onClick={onRetry}><RefreshCw className="size-4" />Retry</button>} />; }
 function formatFileSize(bytes: number) { return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`; }
 function formatDate(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toLocaleString(); }
