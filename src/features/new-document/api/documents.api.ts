@@ -36,7 +36,8 @@ export async function setCoreInputs(
     formData.append("commercial_mode", payload.commercialMode);
   }
 
-  formData.append("header_footer_size", String(payload.headerFooterSize));
+  formData.append("header_size", String(payload.headerSize));
+  formData.append("footer_size", String(payload.footerSize));
   formData.append("footer_template_no", payload.footerTemplateNo);
 
   if (payload.user) {

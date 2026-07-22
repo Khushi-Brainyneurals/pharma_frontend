@@ -75,7 +75,7 @@ export function CoverBomPage() {
             {state.data && editing && state.draft ? <BomEditor data={state.data} draft={state.draft} errors={state.errors} disabled={state.mode === "saving"} onChange={controller.updateDraft} /> : null}
 
             {state.preview && !editing && !["preview-failure", "version-conflict"].includes(state.mode) ? <>
-              {state.warnings.length ? <Warnings warnings={state.warnings} /> : null}
+              {/* {state.warnings.length ? <Warnings warnings={state.warnings} /> : null} */}
               <div className="mb-3 flex flex-wrap items-center gap-3 rounded-card border border-border bg-surface px-4 py-3"><FileText className="size-4 text-primary" /><span className="min-w-0 flex-1 truncate text-small font-semibold">{state.preview.filename}</span><span className="text-micro text-subdued">{formatFileSize(state.preview.size)}{state.preview.lastModified ? ` · Updated ${formatDate(state.preview.lastModified)}` : ""}</span></div>
               <CoverBomDocumentViewer document={state.preview} />
             </> : null}

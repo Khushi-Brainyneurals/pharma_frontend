@@ -50,7 +50,8 @@ export interface CoreInputsFormState {
   batchSize: string;
   batchType: BatchType | "";
   commercialMode: CommercialMode | "";
-  headerFooterSize: string;
+  headerSize: string;
+  footerSize: string;
   footerTemplateNo: string;
 }
 
@@ -72,7 +73,8 @@ const INITIAL_FORM_STATE: CoreInputsFormState = {
   batchSize: "",
   batchType: "",
   commercialMode: "",
-  headerFooterSize: "",
+  headerSize: "",
+  footerSize: "",
   footerTemplateNo: "",
 };
 
@@ -85,12 +87,6 @@ const BATCH_TYPE_OPTIONS = [
 const COMMERCIAL_MODE_OPTIONS = [
   { value: "revision", label: "Revision" },
   { value: "validation", label: "Validation" },
-];
-
-const HEADER_FOOTER_SIZE_OPTIONS = [
-  { value: "12", label: "A4 - 12 mm margins" },
-  { value: "16", label: "A4 - 16 mm margins" },
-  { value: "20", label: "A4 - 20 mm margins" },
 ];
 
 export function CoreInputsPage() {
@@ -183,7 +179,12 @@ export function CoreInputsPage() {
   function handleFieldChange(
     field: keyof Pick<
       CoreInputsFormState,
-      "batchSize" | "batchType" | "commercialMode" | "headerFooterSize" | "footerTemplateNo"
+      | "batchSize"
+      | "batchType"
+      | "commercialMode"
+      | "headerSize"
+      | "footerSize"
+      | "footerTemplateNo"
     >,
   ) {
     return (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -213,9 +214,10 @@ export function CoreInputsPage() {
     const pp = form.pp;
     const batchType = form.batchType;
     const batchSize = parseWholeNumber(form.batchSize);
-    const headerFooterSize = parseWholeNumber(form.headerFooterSize);
+    const headerSize = parsePositiveNumber(form.headerSize);
+    const footerSize = parsePositiveNumber(form.footerSize);
 
-    if (!mfc || !pp || !batchType || batchSize === null || headerFooterSize === null) {
+    if (!mfc || !pp || !batchType || batchSize === null || headerSize === null || footerSize === null) {
       return;
     }
 
@@ -233,7 +235,8 @@ export function CoreInputsPage() {
         batchSize,
         batchType,
         commercialMode: batchType === "commercial" ? form.commercialMode : "",
-        headerFooterSize,
+        headerSize,
+        footerSize,
         footerTemplateNo: form.footerTemplateNo.trim(),
         user: user?.username ?? user?.id,
       });
@@ -383,20 +386,40 @@ export function CoreInputsPage() {
                     />
                   ) : null}
 
-                  <SelectField
-                    id="header-footer-size"
-                    label="Header/footer size"
-                    value={form.headerFooterSize}
-                    options={HEADER_FOOTER_SIZE_OPTIONS}
-                    placeholder="Select a size..."
-                    error={visibleErrors.headerFooterSize}
+                  <TextField
+                    id="header-size"
+                    label="Header size"
+                    value={form.headerSize}
+                    error={visibleErrors.headerSize}
                     isRequired
                     disabled={isSubmitting || Boolean(success)}
-                    helper="Sourced from Company Standard Info."
+                    helper="Header band size in inches, e.g. 0.25, 0.5, or 1."
+                    placeholder="0.5"
+                    type="number"
+                    min="0"
+                    step="any"
                     onBlur={() =>
-                      setTouched((current) => ({ ...current, headerFooterSize: true }))
+                      setTouched((current) => ({ ...current, headerSize: true }))
                     }
-                    onChange={handleFieldChange("headerFooterSize")}
+                    onChange={handleFieldChange("headerSize")}
+                  />
+
+                  <TextField
+                    id="footer-size"
+                    label="Footer size"
+                    value={form.footerSize}
+                    error={visibleErrors.footerSize}
+                    isRequired
+                    disabled={isSubmitting || Boolean(success)}
+                    helper="Footer band size in inches, e.g. 0.25, 0.5, or 1."
+                    placeholder="0.5"
+                    type="number"
+                    min="0"
+                    step="any"
+                    onBlur={() =>
+                      setTouched((current) => ({ ...current, footerSize: true }))
+                    }
+                    onChange={handleFieldChange("footerSize")}
                   />
 
                   <TextField
@@ -552,6 +575,9 @@ function TextField({
   error,
   helper,
   placeholder,
+  type = "text",
+  min,
+  step,
   isRequired,
   disabled,
   onBlur,
@@ -563,6 +589,9 @@ function TextField({
   error?: string;
   helper: string;
   placeholder?: string;
+  type?: "number" | "text";
+  min?: string;
+  step?: string;
   isRequired?: boolean;
   disabled?: boolean;
   onBlur: () => void;
@@ -580,6 +609,9 @@ function TextField({
         id={id}
         value={value}
         placeholder={placeholder}
+        type={type}
+        min={min}
+        step={step}
         disabled={disabled}
         aria-invalid={Boolean(error)}
         aria-describedby={errorId}
@@ -752,10 +784,16 @@ function validateCoreInputs(
     errors.commercialMode = "Select a commercial mode.";
   }
 
-  if (!form.headerFooterSize) {
-    errors.headerFooterSize = "Select the header/footer size.";
-  } else if (parseWholeNumber(form.headerFooterSize) === null) {
-    errors.headerFooterSize = "Enter a valid header/footer size.";
+  if (!form.headerSize.trim()) {
+    errors.headerSize = "Enter the header size.";
+  } else if (parsePositiveNumber(form.headerSize) === null) {
+    errors.headerSize = "Enter a valid header size in inches.";
+  }
+
+  if (!form.footerSize.trim()) {
+    errors.footerSize = "Enter the footer size.";
+  } else if (parsePositiveNumber(form.footerSize) === null) {
+    errors.footerSize = "Enter a valid footer size in inches.";
   }
 
   if (!form.footerTemplateNo.trim()) {
@@ -821,6 +859,21 @@ function parseWholeNumber(value: string) {
   return numberValue;
 }
 
+function parsePositiveNumber(value: string) {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const numberValue = Number(normalized);
+  if (!Number.isFinite(numberValue) || numberValue <= 0) {
+    return null;
+  }
+
+  return numberValue;
+}
+
 function getBatchSizeWarning(value: string) {
   const parsed = parseWholeNumber(value);
 
@@ -876,7 +929,8 @@ function getPrimaryDisabledReason(errors: CoreInputsErrors, hasUploadingFile: bo
     errors.batchSize ||
     errors.batchType ||
     errors.commercialMode ||
-    errors.headerFooterSize ||
+    errors.headerSize ||
+    errors.footerSize ||
     errors.footerTemplateNo
   ) {
     return "Complete the required fields to continue.";

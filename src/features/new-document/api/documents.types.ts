@@ -25,7 +25,8 @@ export interface SetCoreInputsPayload {
   batchSize: number;
   batchType: BatchType;
   commercialMode?: CommercialMode | "";
-  headerFooterSize: number;
+  headerSize: number;
+  footerSize: number;
   footerTemplateNo: string;
   user?: string;
 }
@@ -36,6 +37,7 @@ export interface SetCoreInputsResponse {
   batch_size: number;
   batch_type: string;
   commercial_mode: string;
-  header_footer_size: number;
+  header_size: number;
+  footer_size: number;
   footer_template_no: string;
 }
