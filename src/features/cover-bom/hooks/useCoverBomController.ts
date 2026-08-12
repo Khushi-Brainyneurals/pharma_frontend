@@ -3,10 +3,12 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import {
   fetchCoverBomPreview,
   generateCoverBom,
+  getBomGenerationProgress,
   getCoverBomDocument,
   updateCoverBom,
 } from "../api/coverBom.api";
 import type {
+  BomGenerationProgress,
   CoverBomDocumentData,
   CoverBomMode,
   CoverBomRequestError,
@@ -15,6 +17,7 @@ import type {
   UpdateBomPayload,
 } from "../model/coverBom.types";
 import type { PreviewDocument } from "../../format-preview/model/formatPreview.types";
+import { pollUntilSettled } from "../../../shared/api/pollUntilSettled";
 
 interface ControllerState {
   mode: CoverBomMode;
@@ -25,6 +28,7 @@ interface ControllerState {
   errors: Record<string, string>;
   requestError: CoverBomRequestError | null;
   toast: string | null;
+  generationProgress: BomGenerationProgress | null;
 }
 
 type Action =
@@ -38,7 +42,8 @@ type Action =
   | { type: "discard-edit" }
   | { type: "validation"; errors: Record<string, string> }
   | { type: "saved"; data: CoverBomDocumentData; preview: PreviewDocument }
-  | { type: "toast-clear" };
+  | { type: "toast-clear" }
+  | { type: "generation-progress"; progress: BomGenerationProgress | null };
 
 const initialState: ControllerState = {
   mode: "initial-loading",
@@ -49,14 +54,15 @@ const initialState: ControllerState = {
   errors: {},
   requestError: null,
   toast: null,
+  generationProgress: null,
 };
 
 function reducer(state: ControllerState, action: Action): ControllerState {
   switch (action.type) {
     case "mode": return { ...state, mode: action.mode, requestError: null };
-    case "loaded": return { ...state, data: action.data, preview: action.preview, draft: null, errors: {}, requestError: null, mode: state.warnings.length ? "preview-ready-with-warnings" : "preview-ready" };
-    case "not-generated": return { ...state, data: action.data, preview: null, mode: "not-generated", requestError: null };
-    case "failed": return { ...state, mode: action.mode, requestError: action.error };
+    case "loaded": return { ...state, data: action.data, preview: action.preview, draft: null, errors: {}, requestError: null, generationProgress: null, mode: state.warnings.length ? "preview-ready-with-warnings" : "preview-ready" };
+    case "not-generated": return { ...state, data: action.data, preview: null, mode: "not-generated", requestError: null, generationProgress: null };
+    case "failed": return { ...state, mode: action.mode, requestError: action.error, generationProgress: null };
     case "warnings": return { ...state, warnings: action.warnings };
     case "edit": return { ...state, draft: action.draft, errors: {}, mode: "edit" };
     case "draft": return { ...state, draft: action.draft, errors: {}, mode: "edit-dirty" };
@@ -64,6 +70,7 @@ function reducer(state: ControllerState, action: Action): ControllerState {
     case "validation": return { ...state, errors: action.errors, mode: "validation-failure" };
     case "saved": return { ...state, data: action.data, preview: action.preview, draft: null, errors: {}, requestError: null, mode: "save-success", toast: "BOM corrections saved and the DOCX preview was regenerated." };
     case "toast-clear": return { ...state, toast: null, mode: state.mode === "save-success" ? (state.warnings.length ? "preview-ready-with-warnings" : "preview-ready") : state.mode };
+    case "generation-progress": return { ...state, generationProgress: action.progress };
   }
 }
 
@@ -72,6 +79,7 @@ export function useCoverBomController(documentId: string, canAuthor: boolean, us
   const previewRef = useRef<PreviewDocument | null>(null);
   const requestRef = useRef<AbortController | null>(null);
   const sequenceRef = useRef(0);
+  const generationRef = useRef<AbortController | null>(null);
 
   const replacePreview = useCallback((next: PreviewDocument | null) => {
     if (previewRef.current && previewRef.current.objectUrl !== next?.objectUrl) URL.revokeObjectURL(previewRef.current.objectUrl);
@@ -110,15 +118,32 @@ export function useCoverBomController(documentId: string, canAuthor: boolean, us
 
   useEffect(() => { void load(); return () => { sequenceRef.current += 1; requestRef.current?.abort(); }; }, [load]);
   useEffect(() => () => replacePreview(null), [replacePreview]);
+  useEffect(() => () => generationRef.current?.abort(), []);
 
   const generate = useCallback(async (input: GenerateBomInput) => {
-    if (!canAuthor || !documentId) return;
+    if (!canAuthor || !documentId || generationRef.current) return;
     const errors = validateGeneration(input);
     if (Object.keys(errors).length) { dispatch({ type: "validation", errors }); return; }
     dispatch({ type: "mode", mode: "generating" });
+    dispatch({ type: "generation-progress", progress: null });
+    const controller = new AbortController();
+    generationRef.current = controller;
     try {
-      const generated = await generateCoverBom(documentId, input);
-      dispatch({ type: "warnings", warnings: generated.warnings });
+      // Fires the existing generate-bom request; once the backend accepts it,
+      // poll the dedicated progress endpoint instead of waiting on this call.
+      await generateCoverBom(documentId, input, controller.signal);
+      const settled = await pollUntilSettled({
+        fetchStatus: (signal) => getBomGenerationProgress(documentId, signal),
+        isSettled: (progress) => progress.status === "done" || progress.status === "error",
+        onUpdate: (progress) => dispatch({ type: "generation-progress", progress }),
+        intervalMs: 1500,
+        signal: controller.signal,
+      });
+      if (settled.status === "error") {
+        const failure: CoverBomRequestError = { kind: "service-unavailable", message: settled.error ?? "BOM generation failed.", status: null };
+        throw failure;
+      }
+      dispatch({ type: "warnings", warnings: settled.result?.warnings ?? [] });
       dispatch({ type: "mode", mode: "preview-loading" });
       const [data, preview] = await Promise.all([
         getCoverBomDocument(documentId),
@@ -127,8 +152,11 @@ export function useCoverBomController(documentId: string, canAuthor: boolean, us
       replacePreview(preview);
       dispatch({ type: "loaded", data, preview });
     } catch (error) {
+      if (axios.isCancel(error) || (error instanceof DOMException && error.name === "AbortError")) return;
       const normalized = error as CoverBomRequestError;
       dispatch({ type: "failed", mode: failureMode(normalized, "generation-failure"), error: normalized });
+    } finally {
+      if (generationRef.current === controller) generationRef.current = null;
     }
   }, [canAuthor, documentId, replacePreview]);
 

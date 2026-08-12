@@ -22,8 +22,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getCoverBomRoute, getDocumentInputsRoute, ROUTES } from "../../../app/routing/routes";
 import { USER_ROLES, USER_ROLE_LABELS } from "../../auth/model/roles";
 import { useAuthStore } from "../../auth/state/auth.store";
-import { AppHeader } from "../../new-document/components/AppHeader";
-import { AppSidebar } from "../../new-document/components/AppSidebar";
+import { AppShell } from "../../../app/layout/AppShell";
 import { DocumentStepper } from "../../new-document/components/DocumentStepper";
 import { useDocumentSelectorData } from "../../new-document/hooks/useDocumentSelectorData";
 import { DOCUMENT_SELECTOR_STEPS } from "../../new-document/model/documentSelector.config";
@@ -31,7 +30,6 @@ import { fetchFormatPreview } from "../api/formatPreview.api";
 import { DocxPreview } from "../components/DocxPreview";
 import { PreviewSkeleton } from "../components/PreviewSkeleton";
 import { PreviewStateCard } from "../components/PreviewStateCard";
-import { SessionTimeoutOverlay } from "../components/SessionTimeoutOverlay";
 import type { PreviewDocument, PreviewRequestError } from "../model/formatPreview.types";
 
 interface PreviewLocationState {
@@ -46,7 +44,6 @@ export function FormatPreviewPage() {
   const navigate = useNavigate();
   const routeState = location.state as PreviewLocationState | null;
   const user = useAuthStore((state) => state.user);
-  const clearSession = useAuthStore((state) => state.clearSession);
   const { context, isLoading: isLoadingContext } = useDocumentSelectorData(user);
   const canAuthor = user?.role === USER_ROLES.PREPARED_BY;
   const [document, setDocument] = useState<PreviewDocument | null>(null);
@@ -55,7 +52,6 @@ export function FormatPreviewPage() {
   const [isDocumentReady, setIsDocumentReady] = useState(false);
   const [requestError, setRequestError] = useState<PreviewRequestError | null>(null);
   const [exceptionsAccepted, setExceptionsAccepted] = useState(false);
-  const [sessionExpired, setSessionExpired] = useState(false);
   const [adminNotice, setAdminNotice] = useState<string | null>(null);
   const requestSequence = useRef(0);
   const requestControllerRef = useRef<AbortController | null>(null);
@@ -83,7 +79,8 @@ export function FormatPreviewPage() {
     } catch (error) {
       if (axios.isCancel(error) || sequence !== requestSequence.current) return;
       const normalized = error as PreviewRequestError;
-      if (normalized.kind === "session-expired") setSessionExpired(true);
+      // A 401 also flips the global session-expired flag (httpClient response
+      // interceptor), which shows the app-wide Session Timeout Overlay on top of this page.
       setRequestError(normalized);
       if (documentRef.current) URL.revokeObjectURL(documentRef.current.objectUrl);
       documentRef.current = null;
@@ -126,49 +123,31 @@ export function FormatPreviewPage() {
     });
   }
 
-  function handleSignIn() {
-    clearSession();
-    navigate(ROUTES.login, {
-      replace: true,
-      state: {
-        from: location,
-        authNotice: {
-          variant: "info",
-          message: "Your session timed out. Sign in again to reopen this document safely.",
-        },
-      },
-    });
-  }
-
   const hasWarnings = Boolean(document?.extractionWarnings.length);
   const canProceed = Boolean(
     canAuthor && document && isDocumentReady && (!hasWarnings || exceptionsAccepted),
   );
 
   return (
-    <div className="min-h-screen bg-background text-text">
-      <AppHeader user={user} unit={context?.unit ?? null} isLoadingUnit={isLoadingContext} />
-      <div className="lg:grid lg:h-[calc(100vh-var(--topbar-h))] lg:grid-cols-[var(--sidebar-w)_minmax(0,1fr)] lg:overflow-hidden">
-        <AppSidebar user={user} />
-        <main className="min-w-0 lg:h-full lg:overflow-y-auto">
-          <div className="sticky top-0 z-10 border-b border-border bg-surface px-4 py-4 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-[1180px]">
-              <DocumentStepper steps={DOCUMENT_SELECTOR_STEPS} activeStepId="preview" />
-            </div>
+    <AppShell user={user} unit={context?.unit ?? null} isLoadingUnit={isLoadingContext}>
+      <div className="sticky top-0 z-10 border-b border-border bg-surface px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1180px]">
+          <DocumentStepper steps={DOCUMENT_SELECTOR_STEPS} activeStepId="preview" />
+        </div>
+      </div>
+      <div className="border-b border-border bg-surface px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-3">
+          <div className="mr-auto">
+            <p className="text-micro font-semibold uppercase tracking-overline text-primary-dark">Step 3 of 7</p>
+            <h1 className="mt-1 text-h1 font-semibold text-text">Page-1 preview</h1>
+            <p className="mt-1 text-small text-subdued">Review the generated Word document before building the cover and bill of materials.</p>
           </div>
-          <div className="border-b border-border bg-surface px-4 py-4 sm:px-6 lg:px-8">
-            <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-3">
-              <div className="mr-auto">
-                <p className="text-micro font-semibold uppercase tracking-overline text-primary-dark">Step 3 of 7</p>
-                <h1 className="mt-1 text-h1 font-semibold text-text">Page-1 preview</h1>
-                <p className="mt-1 text-small text-subdued">Review the generated Word document before building the cover and bill of materials.</p>
-              </div>
-              {/* <span className="rounded-pill border border-border bg-surface px-3 py-1 font-mono text-mono-sm text-subdued">{documentId || "No document ID"}</span>
-              <span className="rounded-pill bg-draft-bg px-3 py-1 text-micro font-semibold uppercase tracking-overline text-draft-fg">Draft</span> */}
-            </div>
-          </div>
+          {/* <span className="rounded-pill border border-border bg-surface px-3 py-1 font-mono text-mono-sm text-subdued">{documentId || "No document ID"}</span>
+          <span className="rounded-pill bg-draft-bg px-3 py-1 text-micro font-semibold uppercase tracking-overline text-draft-fg">Draft</span> */}
+        </div>
+      </div>
 
-          {!canAuthor ? (
+      {!canAuthor ? (
             <PreviewStateCard
               icon={ShieldX}
               title="Permission denied"
@@ -216,10 +195,7 @@ export function FormatPreviewPage() {
           ) : (
             <PreviewStateCard icon={FileQuestion} title="No preview yet" message="Generate a Page-1 preview from the saved Core inputs before continuing." actions={<button type="button" className="preview-button-primary" onClick={() => void loadPreview()}><FileSearch className="size-4" aria-hidden="true" />Generate preview</button>} />
           )}
-        </main>
-      </div>
-      {sessionExpired ? <SessionTimeoutOverlay onSignIn={handleSignIn} /> : null}
-    </div>
+    </AppShell>
   );
 }
 

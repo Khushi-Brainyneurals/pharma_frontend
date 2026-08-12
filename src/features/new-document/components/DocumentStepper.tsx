@@ -19,7 +19,7 @@ export function DocumentStepper({ steps, activeStepId }: DocumentStepperProps) {
           return (
             <li key={step.id} className="flex min-w-0 flex-1 items-center gap-2">
               <span
-                className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-micro font-semibold ${
+                className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full border text-small font-semibold ${
                   isActive || isComplete
                     ? "border-primary bg-primary text-white"
                     : "border-border bg-muted text-subdued"
@@ -27,7 +27,7 @@ export function DocumentStepper({ steps, activeStepId }: DocumentStepperProps) {
                 aria-current={isActive ? "step" : undefined}
               >
                 {isComplete ? (
-                  <Check className="size-4" aria-hidden="true" />
+                  <Check className="size-3.5" strokeWidth="3.5" aria-hidden="true" />
                 ) : (
                   index + 1
                 )}

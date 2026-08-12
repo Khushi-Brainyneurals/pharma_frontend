@@ -9,6 +9,37 @@ export const ROUTES = {
   documentSelectStages: "/documents/:documentId/stages",
 } as const;
 
+export const MASTER_DATA_ROUTES = {
+  hub: "/master-data",
+  company: "/master-data/company",
+  equipmentInstrument: "/master-data/equipment-instrument",
+  types: "/master-data/types",
+  stageDocuments: "/master-data/sets/:productType/:docType/stage-documents",
+  batchDocuments: "/master-data/sets/:productType/:docType/batch-documents",
+  preview: "/master-data/sets/:productType/:docType/preview",
+} as const;
+
+export interface MasterDataRouteScope {
+  productType: string;
+  docType: string;
+}
+
+function masterDataSetRoute({ productType, docType }: MasterDataRouteScope, segment: string) {
+  return `/master-data/sets/${encodeURIComponent(productType)}/${encodeURIComponent(docType)}/${segment}`;
+}
+
+export function getStageDocumentsRoute(scope: MasterDataRouteScope) {
+  return masterDataSetRoute(scope, "stage-documents");
+}
+
+export function getBatchDocumentsRoute(scope: MasterDataRouteScope) {
+  return masterDataSetRoute(scope, "batch-documents");
+}
+
+export function getMasterDataPreviewRoute(scope: MasterDataRouteScope) {
+  return masterDataSetRoute(scope, "preview");
+}
+
 export function getDocumentInputsRoute(documentId: string) {
   return `/documents/${encodeURIComponent(documentId)}/inputs`;
 }

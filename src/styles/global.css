@@ -86,7 +86,7 @@
   --card-pad: 24px;
   --card-pad-tight: 20px;
   --section-gap: 24px;
-  --topbar-h: 68px;
+  --topbar-h: 64px;
   --sidebar-w: 228px;
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -126,8 +126,7 @@ body {
   min-width: 320px;
   color: rgb(var(--color-text));
   background: rgb(var(--color-background));
-  font-family:
-    var(--font-sans);
+  font-family: var(--font-sans);
 }
 
 button,

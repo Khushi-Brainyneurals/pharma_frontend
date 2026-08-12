@@ -8,8 +8,7 @@ import { LoadingSpinner } from "../../../shared/ui/LoadingSpinner";
 import { USER_ROLE_LABELS, USER_ROLES } from "../../auth/model/roles";
 import { useAuthStore } from "../../auth/state/auth.store";
 import { createBmrDocument } from "../api/documents.api";
-import { AppHeader } from "../components/AppHeader";
-import { AppSidebar } from "../components/AppSidebar";
+import { AppShell } from "../../../app/layout/AppShell";
 import { DocumentOptionCard } from "../components/DocumentOptionCard";
 import { DocumentStepper } from "../components/DocumentStepper";
 import { GuardPanel } from "../components/GuardPanel";
@@ -278,45 +277,41 @@ export function NewDocumentSelectorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-text">
-      <AppHeader user={user} unit={context?.unit ?? null} isLoadingUnit={isLoading} />
-      <div className="lg:grid lg:h-[calc(100vh-var(--topbar-h))] lg:grid-cols-[var(--sidebar-w)_minmax(0,1fr)] lg:overflow-hidden">
-        <AppSidebar user={user} />
-        <main className="min-w-0 px-4 py-6 sm:px-6 lg:h-full lg:overflow-y-auto lg:px-8">
-          <section className="rounded-panel border border-border bg-surface p-5 shadow-sm sm:p-6">
-            {config ? (
-              <DocumentStepper steps={config.steps} activeStepId="type" />
-            ) : (
-              <div className="h-10 animate-pulse rounded-control bg-muted" aria-hidden="true" />
-            )}
+    <AppShell user={user} unit={context?.unit ?? null} isLoadingUnit={isLoading}>
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        <section className="rounded-panel border border-border bg-surface p-5 shadow-sm sm:p-6">
+          {config ? (
+            <DocumentStepper steps={config.steps} activeStepId="type" />
+          ) : (
+            <div className="h-10 animate-pulse rounded-control bg-muted" aria-hidden="true" />
+          )}
 
-            <div className="mt-6 border-t border-border pt-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="text-h1 font-semibold">Start a new document</h2>
-                  <p className="mt-2 max-w-2xl text-small leading-6 text-subdued">
-                    Choose the dosage form and document type. Only Tablet · Batch Manufacturing
-                    Record is available in this release.
-                  </p>
-                </div>
-                <div className="shrink-0 rounded-control border border-border bg-muted px-3 py-2 text-small font-semibold text-subdued">
-                  {isLoading ? (
-                    <span className="inline-flex items-center gap-2" aria-live="polite">
-                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                      Loading document options…
-                    </span>
-                  ) : (
-                    `Creating in Unit ${context?.unit?.id ?? "—"}`
-                  )}
-                </div>
+          <div className="mt-6 border-t border-border pt-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-h1 font-semibold">Start a new document</h2>
+                <p className="mt-2 max-w-2xl text-small leading-6 text-subdued">
+                  Choose the dosage form and document type. Only Tablet · Batch Manufacturing
+                  Record is available in this release.
+                </p>
               </div>
-
-              <div className="mt-6">{body}</div>
+              <div className="shrink-0 rounded-control border border-border bg-muted px-3 py-2 text-small font-semibold text-subdued">
+                {isLoading ? (
+                  <span className="inline-flex items-center gap-2" aria-live="polite">
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                    Loading document options…
+                  </span>
+                ) : (
+                  `Creating in Unit ${context?.unit?.id ?? "-"}`
+                )}
+              </div>
             </div>
-          </section>
-        </main>
+
+            <div className="mt-6">{body}</div>
+          </div>
+        </section>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

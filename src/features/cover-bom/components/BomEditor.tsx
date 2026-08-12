@@ -19,7 +19,7 @@
 //         <div className="max-h-[calc(100vh-370px)] min-h-[520px] overflow-auto">
 //           <table className="w-full min-w-[1180px] border-collapse text-small">
 //             <thead className="sticky top-0 z-[1] bg-muted text-left text-micro uppercase tracking-overline text-subdued"><tr>{["Sr. no.", "Material code", "Ingredient name", "UOM", "Layer", "Production part", "MFC batch qty", "Required production qty"].map((label) => <th key={label} className="border-b border-border px-3 py-3 font-semibold">{label}</th>)}</tr></thead>
-//             <tbody>{data.ingredients.map((ingredient, index) => { const row = draft.ingredients[index]; return <tr key={row.rowKey} className="border-b border-border/80 align-top hover:bg-muted/40"><td className="w-20 px-3 py-2"><input value={row.srNo} inputMode="numeric" disabled={disabled} className="bom-table-input w-12" aria-label={`Serial number row ${index + 1}`} onChange={(event) => updateRow(index, "srNo", event.target.value)} />{errors[`ingredient-${index}-sr`] ? <FieldError message={errors[`ingredient-${index}-sr`]} /> : null}</td><td className="px-3 py-3 font-mono text-mono-sm text-subdued">{ingredient.material_code || "—"}</td><td className="min-w-[280px] p-2"><input value={row.ingredientName} disabled={disabled} className="bom-table-input w-full" aria-label={`Ingredient name row ${index + 1}`} onChange={(event) => updateRow(index, "ingredientName", event.target.value)} />{errors[`ingredient-${index}-name`] ? <FieldError message={errors[`ingredient-${index}-name`]} /> : null}</td><td className="w-20 p-2"><input value={row.uom} disabled={disabled} className="bom-table-input w-16" aria-label={`UOM row ${index + 1}`} onChange={(event) => updateRow(index, "uom", event.target.value)} />{errors[`ingredient-${index}-uom`] ? <FieldError message={errors[`ingredient-${index}-uom`]} /> : null}</td><td className="px-3 py-3 text-subdued">{ingredient.layer || "—"}</td><td className="min-w-38 px-3 py-3 text-subdued">{ingredient.part || "—"}</td><td className="px-3 py-3 text-left tabular-nums">{formatQuantity(ingredient.qty_per_mfc_batch)}</td><td className="px-3 py-3 text-left tabular-nums">{formatQuantity(ingredient.qty_required_production)}</td></tr>; })}</tbody>
+//             <tbody>{data.ingredients.map((ingredient, index) => { const row = draft.ingredients[index]; return <tr key={row.rowKey} className="border-b border-border/80 align-top hover:bg-muted/40"><td className="w-20 px-3 py-2"><input value={row.srNo} inputMode="numeric" disabled={disabled} className="bom-table-input w-12" aria-label={`Serial number row ${index + 1}`} onChange={(event) => updateRow(index, "srNo", event.target.value)} />{errors[`ingredient-${index}-sr`] ? <FieldError message={errors[`ingredient-${index}-sr`]} /> : null}</td><td className="px-3 py-3 font-mono text-mono-sm text-subdued">{ingredient.material_code || "-"}</td><td className="min-w-[280px] p-2"><input value={row.ingredientName} disabled={disabled} className="bom-table-input w-full" aria-label={`Ingredient name row ${index + 1}`} onChange={(event) => updateRow(index, "ingredientName", event.target.value)} />{errors[`ingredient-${index}-name`] ? <FieldError message={errors[`ingredient-${index}-name`]} /> : null}</td><td className="w-20 p-2"><input value={row.uom} disabled={disabled} className="bom-table-input w-16" aria-label={`UOM row ${index + 1}`} onChange={(event) => updateRow(index, "uom", event.target.value)} />{errors[`ingredient-${index}-uom`] ? <FieldError message={errors[`ingredient-${index}-uom`]} /> : null}</td><td className="px-3 py-3 text-subdued">{ingredient.layer || "-"}</td><td className="min-w-38 px-3 py-3 text-subdued">{ingredient.part || "-"}</td><td className="px-3 py-3 text-left tabular-nums">{formatQuantity(ingredient.qty_per_mfc_batch)}</td><td className="px-3 py-3 text-left tabular-nums">{formatQuantity(ingredient.qty_required_production)}</td></tr>; })}</tbody>
 //           </table>
 //         </div>
 //       </div>
@@ -29,7 +29,7 @@
 
 // function EditField({ label, value, error, disabled, onChange }: { label: string; value: string; error?: string; disabled: boolean; onChange: (value: string) => void }) { return <label className="space-y-2 text-small font-semibold">{label}<input value={value} disabled={disabled} inputMode="numeric" className="bom-input" onChange={(event) => onChange(event.target.value)} />{error ? <FieldError message={error} /> : null}</label>; }
 // function FieldError({ message }: { message: string }) { return <span className="mt-1 flex items-start gap-1 text-micro font-normal text-danger-ink"><AlertCircle className="mt-0.5 size-3 shrink-0" />{message}</span>; }
-// function formatQuantity(value: number) { return Number.isFinite(value) ? value.toLocaleString(undefined, { maximumFractionDigits: 4 }) : "—"; }
+// function formatQuantity(value: number) { return Number.isFinite(value) ? value.toLocaleString(undefined, { maximumFractionDigits: 4 }) : "-"; }
 
 import { AlertCircle, Info } from "lucide-react";
 import type { CoverBomDocumentData, EditableBomState } from "../model/coverBom.types";
@@ -104,7 +104,7 @@ export function BomEditor({ data, draft, errors, disabled, onChange }: BomEditor
           {errors[`ingredient-${index}-sr`] && <FieldError message={errors[`ingredient-${index}-sr`]} />}
         </td>
         <td className="px-3 py-3 font-mono text-mono-sm text-subdued">
-          {ingredient.material_code || "—"}
+          {ingredient.material_code || "-"}
         </td>
         <td className="min-w-[280px] p-2">
           <input
@@ -126,7 +126,7 @@ export function BomEditor({ data, draft, errors, disabled, onChange }: BomEditor
           />
           {errors[`ingredient-${index}-uom`] && <FieldError message={errors[`ingredient-${index}-uom`]} />}
         </td>
-        <td className="min-w-38 px-3 py-3 text-subdued">{ingredient.part || "—"}</td>
+        <td className="min-w-38 px-3 py-3 text-subdued">{ingredient.part || "-"}</td>
         <td className="px-3 py-3 text-left tabular-nums">
           {formatQuantity(ingredient.qty_per_mfc_batch)}
         </td>
@@ -265,5 +265,5 @@ function FieldError({ message }: { message: string }) {
 function formatQuantity(value: number) {
   return Number.isFinite(value)
     ? value.toLocaleString(undefined, { maximumFractionDigits: 4 })
-    : "—";
+    : "-";
 }

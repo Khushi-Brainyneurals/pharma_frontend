@@ -21,7 +21,7 @@ export const DOCUMENT_SELECTOR_STEPS: DocumentStep[] = [
   { id: "preview", label: "Preview" },
   { id: "cover-bom", label: "Cover + BOM" },
   { id: "stages", label: "Select stages" },
-  { id: "stage-input", label: "Stage input" },
+  // { id: "stage-input", label: "Stage input" },
   { id: "generate-submit", label: "Generate & submit" },
 ];
 

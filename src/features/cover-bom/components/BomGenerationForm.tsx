@@ -1,8 +1,8 @@
 import { AlertCircle, FileCog, Loader2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import type { GenerateBomInput } from "../model/coverBom.types";
+import type { BomGenerationProgress, GenerateBomInput } from "../model/coverBom.types";
 
-export function BomGenerationForm({ busy, errors, onGenerate }: { busy: boolean; errors: Record<string, string>; onGenerate: (input: GenerateBomInput) => void }) {
+export function BomGenerationForm({ busy, progress, errors, onGenerate }: { busy: boolean; progress?: BomGenerationProgress | null; errors: Record<string, string>; onGenerate: (input: GenerateBomInput) => void }) {
   const [input, setInput] = useState<GenerateBomInput>({ lotSize: "", volume: "" });
   function submit(event: FormEvent) { event.preventDefault(); onGenerate(input); }
   return (
@@ -11,10 +11,39 @@ export function BomGenerationForm({ busy, errors, onGenerate }: { busy: boolean;
       <form className="mt-6 grid gap-5 sm:grid-cols-2" onSubmit={submit} noValidate>
         <GenerationField id="lot-size" label="Lot size" value={input.lotSize} error={errors.lotSize} helper="Use the lot size required for this production run." onChange={(value) => setInput((current) => ({ ...current, lotSize: value }))} />
         <GenerationField id="production-volume" label="Volume" value={input.volume} error={errors.volume} helper="Enter zero or a positive production volume." inputMode="decimal" onChange={(value) => setInput((current) => ({ ...current, volume: value }))} />
+        {busy ? <div className="sm:col-span-2"><GenerationProgress progress={progress ?? null} /></div> : null}
         <div className="sm:col-span-2 flex justify-end"><button type="submit" className="preview-button-primary" disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : <FileCog className="size-4" />}{busy ? "Generating Cover + BOM…" : "Generate Cover + BOM"}</button></div>
       </form>
     </section>
   );
+}
+
+function GenerationProgress({ progress }: { progress: BomGenerationProgress | null }) {
+  const percent = clampPercent(progress?.percent);
+  const step = progress?.step?.trim() || "Starting…";
+  return (
+    <div className="rounded-control bg-accent-soft/40 pt-4 pb-2" role="status" aria-live="polite">
+      <div className="flex items-center justify-between text-small font-semibold">
+        <span className="min-w-0 truncate">{step}</span>
+        <span className="ml-3 shrink-0 tabular-nums">{percent}%</span>
+      </div>
+      <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-accent-soft">
+        <div
+          className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+          style={{ width: `${percent}%` }}
+          role="progressbar"
+          aria-valuenow={percent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        />
+      </div>
+    </div>
+  );
+}
+
+function clampPercent(value: number | undefined) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(100, Math.max(0, Math.round(value as number)));
 }
 
 function GenerationField({ id, label, value, helper, error, inputMode, onChange }: { id: string; label: string; value: string; helper: string; error?: string; inputMode?: "decimal"; onChange: (value: string) => void }) {

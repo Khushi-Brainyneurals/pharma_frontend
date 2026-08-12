@@ -61,6 +61,16 @@ export interface GenerateBomResponse {
   status: string;
 }
 
+export type BomGenerationStatus = "running" | "done" | "error";
+
+export interface BomGenerationProgress {
+  status: BomGenerationStatus;
+  percent: number;
+  step: string;
+  result: GenerateBomResponse | null;
+  error: string | null;
+}
+
 export interface EditableBomState {
   batchSize: string;
   batchType: string;

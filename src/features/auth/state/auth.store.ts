@@ -11,8 +11,11 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  /** Set by the httpClient response interceptor on a 401 from an authenticated request - drives the global Session Timeout Overlay. */
+  sessionExpired: boolean;
   setSession: (session: AuthSession) => void;
   clearSession: () => void;
+  setSessionExpired: (value: boolean) => void;
 }
 
 const persistedSession = getPersistedSession();
@@ -22,6 +25,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   accessToken: persistedSession?.accessToken ?? null,
   refreshToken: persistedSession?.refreshToken ?? null,
   isAuthenticated: Boolean(persistedSession?.accessToken),
+  sessionExpired: false,
   setSession: (session) => {
     persistSession(session);
     set({
@@ -29,6 +33,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       accessToken: session.accessToken,
       refreshToken: session.refreshToken ?? null,
       isAuthenticated: true,
+      sessionExpired: false,
     });
   },
   clearSession: () => {
@@ -38,6 +43,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      sessionExpired: false,
     });
   },
+  setSessionExpired: (value) => set({ sessionExpired: value }),
 }));

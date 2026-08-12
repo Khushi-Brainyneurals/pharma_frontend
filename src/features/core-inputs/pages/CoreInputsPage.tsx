@@ -26,8 +26,7 @@ import type {
   CreateBmrDocumentResponse,
   SetCoreInputsResponse,
 } from "../../new-document/api/documents.types";
-import { AppHeader } from "../../new-document/components/AppHeader";
-import { AppSidebar } from "../../new-document/components/AppSidebar";
+import { AppShell } from "../../../app/layout/AppShell";
 import { DocumentStepper } from "../../new-document/components/DocumentStepper";
 import { useDocumentSelectorData } from "../../new-document/hooks/useDocumentSelectorData";
 import { DOCUMENT_SELECTOR_STEPS } from "../../new-document/model/documentSelector.config";
@@ -256,12 +255,9 @@ export function CoreInputsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-text">
-      <AppHeader user={user} unit={context?.unit ?? null} isLoadingUnit={isLoadingContext} />
-      <div className="lg:grid lg:h-[calc(100vh-var(--topbar-h))] lg:grid-cols-[var(--sidebar-w)_minmax(0,1fr)] lg:overflow-hidden">
-        <AppSidebar user={user} />
-        <main className="min-w-0 px-4 py-6 sm:px-6 lg:h-full lg:overflow-y-auto lg:px-8">
-          <section className="mx-auto max-w-[1100px] rounded-panel border border-border bg-surface shadow-sm">
+    <AppShell user={user} unit={context?.unit ?? null} isLoadingUnit={isLoadingContext}>
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-[1100px] rounded-panel border border-border bg-surface shadow-sm">
             <div className="p-5 sm:p-6">
               <DocumentStepper steps={DOCUMENT_SELECTOR_STEPS} activeStepId="inputs" />
             </div>
@@ -487,10 +483,9 @@ export function CoreInputsPage() {
                 </div>
               </div>
             </form>
-          </section>
-        </main>
+        </section>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

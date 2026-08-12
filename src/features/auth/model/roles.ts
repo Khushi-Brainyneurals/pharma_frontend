@@ -2,7 +2,7 @@ export const USER_ROLES = {
   SUPER_ADMIN: "superadmin",
   ADMIN: "admin",
   PREPARED_BY: "preparer",
-  REVIEWER_QA: "reviewer_qa",
+  REVIEWER_QA: "reviewer",
   REVIEWER_PR: "reviewer_pr",
   APPROVED_BY: "approver",
 } as const;
@@ -13,8 +13,8 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   [USER_ROLES.SUPER_ADMIN]: "Super Admin",
   [USER_ROLES.ADMIN]: "Admin",
   [USER_ROLES.PREPARED_BY]: "Prepared By",
-  [USER_ROLES.REVIEWER_QA]: "Reviewer — QA",
-  [USER_ROLES.REVIEWER_PR]: "Reviewer — Production",
+  [USER_ROLES.REVIEWER_QA]: "Reviewer - QA",
+  [USER_ROLES.REVIEWER_PR]: "Reviewer - Production",
   [USER_ROLES.APPROVED_BY]: "Approved By",
 };
 
@@ -22,3 +22,11 @@ export const USER_ROLE_OPTIONS = Object.values(USER_ROLES).map((value) => ({
   value,
   label: USER_ROLE_LABELS[value],
 }));
+
+/** Role choices shown on the login screen's User tab (admin/superadmin excluded — Admin tab covers those). */
+export const LOGIN_USER_ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
+  { value: USER_ROLES.PREPARED_BY, label: "Prepared By" },
+  { value: USER_ROLES.REVIEWER_QA, label: "Reviewer QA" },
+  { value: USER_ROLES.REVIEWER_PR, label: "Reviewer PR" },
+  { value: USER_ROLES.APPROVED_BY, label: "Approved By" },
+];

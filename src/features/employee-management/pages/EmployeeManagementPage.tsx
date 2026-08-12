@@ -1,13 +1,13 @@
 import { CheckCircle2, Eye, KeyRound, Loader2, Pencil, Plus, Search, Trash2, UserRound, X, } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, } from "react";
 import { getApiErrorMessage } from "../../../shared/api/apiError";
+import { Dialog } from "../../../shared/ui/Dialog";
 import { Input } from "../../../shared/ui/Input";
 import { PasswordInput } from "../../../shared/ui/PasswordInput";
 import { Select } from "../../../shared/ui/Select";
 import { USER_ROLE_LABELS, USER_ROLE_OPTIONS, type UserRole, } from "../../auth/model/roles";
 import { useAuthStore } from "../../auth/state/auth.store";
-import { AppHeader } from "../../new-document/components/AppHeader";
-import { AppSidebar } from "../../new-document/components/AppSidebar";
+import { AppShell } from "../../../app/layout/AppShell";
 import { changeEmployeePassword, deleteEmployee, getEmployeeById, getEmployees, registerEmployee, updateEmployee, } from "../api/employee.api";
 import type { Employee, RegisterEmployeePayload, UpdateEmployeePayload, } from "../api/employee.types";
 
@@ -210,12 +210,9 @@ export function EmployeeManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-text">
-      <AppHeader user={user} unit={null} title="Employee Management" />
-      <div className="lg:grid lg:h-[calc(100vh-var(--topbar-h))] lg:grid-cols-[var(--sidebar-w)_minmax(0,1fr)] lg:overflow-hidden">
-        <AppSidebar user={user} />
-        <main className="min-w-0 px-4 py-6 sm:px-6 lg:h-full lg:overflow-y-auto lg:px-8">
-          <section className="mx-auto max-w-[1280px] rounded-panel border border-border bg-surface p-5 shadow-sm sm:p-6">
+    <AppShell user={user} unit={null} title="Employee Management">
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        <section className="mx-auto rounded-panel border border-border bg-surface p-5 shadow-sm sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h1 className="text-h1 font-semibold">Employee Management</h1>
@@ -317,8 +314,7 @@ export function EmployeeManagementPage() {
                 </table>
               )}
             </div>
-          </section>
-        </main>
+        </section>
       </div>
       {dialog === "create" || dialog === "edit" ? (
         <Dialog
@@ -359,7 +355,7 @@ export function EmployeeManagementPage() {
       ) : null}
       {dialog === "password" && selected ? (
         <Dialog
-          title={`Change password — ${selected.user_id}`}
+          title={`Change password - ${selected.user_id}`}
           busy={actionBusy}
           onClose={closeDialog}
         >
@@ -417,7 +413,7 @@ export function EmployeeManagementPage() {
           </button>
         </div>
       ) : null}
-    </div>
+    </AppShell>
   );
 }
 
@@ -737,57 +733,6 @@ function PasswordForm({
   );
 }
 
-function Dialog({
-  title,
-  busy,
-  onClose,
-  children,
-}: {
-  title: string;
-  busy: boolean;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  useEffect(() => {
-    function keyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !busy) onClose();
-    }
-    document.addEventListener("keydown", keyDown);
-    return () => document.removeEventListener("keydown", keyDown);
-  }, [busy, onClose]);
-  return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-[var(--scrim)] p-4"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !busy) onClose();
-      }}
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="employee-dialog-title"
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-modal border border-border bg-surface p-5 shadow-modal sm:p-6"
-      >
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 id="employee-dialog-title" className="text-h2 font-semibold">
-            {title}
-          </h2>
-          <button
-            type="button"
-            aria-label="Close dialog"
-            disabled={busy}
-            className="viewer-tool border-0"
-            onClick={onClose}
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-        {children}
-      </section>
-    </div>
-  );
-}
-
 function EmployeeDetails({ employee }: { employee: Employee }) {
   const fields = [
     ["User ID", employee.user_id],
@@ -911,5 +856,5 @@ function roleLabel(role: string) {
 }
 function formatDate(value: string) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value || "—" : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? value || "-" : date.toLocaleString();
 }

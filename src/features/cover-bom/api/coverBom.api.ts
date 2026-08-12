@@ -2,6 +2,7 @@ import axios, { type AxiosResponse } from "axios";
 import { httpClient } from "../../../shared/api/httpClient";
 import type { PreviewDocument } from "../../format-preview/model/formatPreview.types";
 import type {
+  BomGenerationProgress,
   CoverBomDocumentData,
   CoverBomFailureKind,
   CoverBomRequestError,
@@ -41,6 +42,21 @@ export async function generateCoverBom(
       },
     );
     return { ...response.data, warnings: stringArray(response.data.warnings) };
+  } catch (error) {
+    throw await normalizeCoverBomError(error);
+  }
+}
+
+export async function getBomGenerationProgress(
+  documentId: string,
+  signal?: AbortSignal,
+) {
+  try {
+    const response = await httpClient.get<BomGenerationProgress>(
+      `/api/bmr/documents/${encodeURIComponent(documentId)}/generate-bom/progress`,
+      { signal, timeout: 15_000 },
+    );
+    return response.data;
   } catch (error) {
     throw await normalizeCoverBomError(error);
   }

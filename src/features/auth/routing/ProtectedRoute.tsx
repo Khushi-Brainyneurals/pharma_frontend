@@ -15,7 +15,7 @@ export function ProtectedRoute() {
           from: location,
           authNotice: {
             message:
-              "Your session timed out. Sign in again to continue. No document was created — nothing was lost.",
+              "Your session timed out. Sign in again to continue. No document was created - nothing was lost.",
             variant: "info",
           },
         }}

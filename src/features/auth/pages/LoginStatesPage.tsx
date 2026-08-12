@@ -169,7 +169,7 @@ const loginStates: StateSpec[] = [
   },
   {
     number: "12",
-    title: "Success — role redirect",
+    title: "Success - role redirect",
     description: "Credentials, role, expiry, and activation checks pass.",
     username: "U-0427",
     password: "validated",

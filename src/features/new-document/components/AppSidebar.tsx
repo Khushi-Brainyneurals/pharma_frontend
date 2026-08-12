@@ -10,13 +10,10 @@ import {
   ReceiptText,
   UsersRound,
 } from "lucide-react";
-import { useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ROUTES } from "../../../app/routing/routes";
-import { logout } from "../../auth/api/auth.api";
+import { NavLink } from "react-router-dom";
+import { MASTER_DATA_ROUTES, ROUTES } from "../../../app/routing/routes";
 import type { AuthenticatedUser } from "../../auth/api/auth.types";
-import { getStoredRefreshToken } from "../../auth/storage/auth.storage";
-import { useAuthStore } from "../../auth/state/auth.store";
+import { useLogout } from "../../auth/hooks/useLogout";
 import { USER_ROLES } from "../../auth/model/roles";
 import { DOCUMENT_SIDEBAR_ITEMS } from "../model/documentSelector.config";
 
@@ -33,36 +30,17 @@ const iconMap = {
   "master-data": ReceiptText,
 };
 
+/** Sidebar entries that have a real destination; the rest stay inert. */
+const ROUTED_SIDEBAR_ITEMS: Record<string, string | undefined> = {
+  "new-document": ROUTES.newDocument,
+  "master-data": MASTER_DATA_ROUTES.hub,
+};
+
 export function AppSidebar({ user }: AppSidebarProps) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const clearSession = useAuthStore((state) => state.clearSession);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  async function handleLogout() {
-    if (isLoggingOut) {
-      return;
-    }
-
-    setIsLoggingOut(true);
-
-    try {
-      const refreshToken = getStoredRefreshToken();
-
-      if (refreshToken) {
-        await logout({ refresh_token: refreshToken });
-      }
-    } catch {
-      // Local cleanup must still win if the server-side logout request fails.
-    } finally {
-      clearSession();
-      navigate(ROUTES.login, { replace: true });
-      setIsLoggingOut(false);
-    }
-  }
+  const { isLoggingOut, handleLogout } = useLogout();
 
   return (
-    <aside className="hidden border-r border-border bg-surface lg:flex lg:h-full lg:w-sidebar-w lg:flex-col">
+    <aside className="hidden border-r border-border bg-surface lg:flex lg:h-full lg:w-sidebar-w lg:shrink-0 lg:flex-col">
       <nav className="flex-1 px-3 py-4" aria-label="Primary">
         <ul className="space-y-1">
           {user?.role === USER_ROLES.ADMIN ? (
@@ -78,22 +56,33 @@ export function AppSidebar({ user }: AppSidebarProps) {
           ) : null}
           {DOCUMENT_SIDEBAR_ITEMS.map((item) => {
             const Icon = iconMap[item.id as keyof typeof iconMap] ?? FileClock;
-            const isActive = item.id === "new-document" && location.pathname === ROUTES.newDocument;
+            const linkTo = ROUTED_SIDEBAR_ITEMS[item.id];
 
+            if (linkTo) {
+              return (
+                <li key={item.id}>
+                  <NavLink
+                    to={linkTo}
+                    className={({ isActive }) => `flex min-h-row-h items-center gap-3 rounded-control px-3 text-small font-medium transition focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${isActive ? "border border-primary/25 bg-accent-soft text-primary-dark" : "text-subdued hover:bg-muted hover:text-text"}`}
+                  >
+                    <Icon className="size-4 shrink-0" aria-hidden="true" />
+                    <span>{item.label}</span>
+                  </NavLink>
+                </li>
+              );
+            }
+
+            // Not in this release - inert rather than a link that goes nowhere.
             return (
               <li key={item.id}>
-                <a
-                  href={isActive ? "/new" : "#"}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`flex min-h-row-h items-center gap-3 rounded-control px-3 text-small font-medium transition focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                    isActive
-                      ? "border border-primary/25 bg-accent-soft text-primary-dark"
-                      : "text-subdued hover:bg-muted hover:text-text"
-                  }`}
+                <span
+                  aria-disabled="true"
+                  title="Not available in this release."
+                  className="flex min-h-row-h cursor-not-allowed items-center gap-3 rounded-control px-3 text-small font-medium text-subdued/60"
                 >
                   <Icon className="size-4 shrink-0" aria-hidden="true" />
                   <span>{item.label}</span>
-                </a>
+                </span>
               </li>
             );
           })}
