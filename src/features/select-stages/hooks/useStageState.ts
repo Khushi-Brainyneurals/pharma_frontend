@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
 import type {
+  EquipmentListItem,
+  InstrumentListItem,
   ParameterMode,
   ParameterKind,
   StageParameter,
@@ -24,7 +26,7 @@ function makeDefaultParameter(name: string): StageParameter {
 
 function makeDefaultStageState(stageId: string): StageState {
   const parameters = getStageParameterNames(stageId).map(makeDefaultParameter);
-  return { parameters };
+  return { parameters, equipmentList: [], instrumentList: [] };
 }
 
 // ─── Normalization from API response ─────────────────────────────────────────
@@ -59,9 +61,49 @@ function normalizeParameter(raw: unknown, fallbackName: string): StageParameter 
   };
 }
 
+function asNumber(v: unknown, fallback: number): number {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function asCppValues(v: unknown): Record<string, string> {
+  if (!isRecord(v)) return {};
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(v)) {
+    result[key] = typeof value === "string" ? value : String(value ?? "");
+  }
+  return result;
+}
+
+/** Normalizes one raw equipment_list entry from the API; returns null if unusable. */
+function normalizeEquipmentItem(raw: unknown): EquipmentListItem | null {
+  if (!isRecord(raw)) return null;
+  const name = asString(raw.name);
+  const id = asString(raw.id);
+  if (!name && !id) return null;
+  return {
+    name,
+    id,
+    processing_step: asString(raw.processing_step),
+    cpp_values: asCppValues(raw.cpp_values),
+    lot: asNumber(raw.lot, 1),
+  };
+}
+
+/** Normalizes one raw instrument_list entry from the API; returns null if unusable. */
+function normalizeInstrumentItem(raw: unknown): InstrumentListItem | null {
+  if (!isRecord(raw)) return null;
+  const name = asString(raw.name);
+  const id = asString(raw.id);
+  if (!name && !id) return null;
+  return { name, id, lot: asNumber(raw.lot, 1) };
+}
+
 /**
  * Merges API-returned parameter data with the stage's config parameter list.
  * Config defines which parameters exist; API data overrides values where available.
+ * Equipment/instrument lists come straight from the API - there is no config
+ * catalog for them, so anything malformed is simply dropped rather than crashing.
  */
 export function buildStageStateFromApi(
   stageId: string,
@@ -88,13 +130,27 @@ export function buildStageStateFromApi(
       : makeDefaultParameter(name);
   });
 
-  return { parameters };
+  const equipmentList = Array.isArray(record.equipment_list)
+    ? record.equipment_list
+        .map(normalizeEquipmentItem)
+        .filter((item): item is EquipmentListItem => item !== null)
+    : [];
+
+  const instrumentList = Array.isArray(record.instrument_list)
+    ? record.instrument_list
+        .map(normalizeInstrumentItem)
+        .filter((item): item is InstrumentListItem => item !== null)
+    : [];
+
+  return { parameters, equipmentList, instrumentList };
 }
 
 /** Returns true if any saved data exists in the API response. */
 export function hasSavedData(apiData: unknown): boolean {
   if (!isRecord(apiData)) return false;
   if (Array.isArray(apiData.parameters) && apiData.parameters.length > 0) return true;
+  if (Array.isArray(apiData.equipment_list) && apiData.equipment_list.length > 0) return true;
+  if (Array.isArray(apiData.instrument_list) && apiData.instrument_list.length > 0) return true;
   return false;
 }
 
@@ -110,6 +166,8 @@ export interface UseStageStateReturn {
     field: keyof StageParameter,
     value: string | boolean | ParameterMode | ParameterKind | null,
   ) => void;
+  setEquipmentList: (stageId: string, list: EquipmentListItem[]) => void;
+  setInstrumentList: (stageId: string, list: InstrumentListItem[]) => void;
   markSaved: (stageId: string) => void;
   markUnsaved: (stageId: string) => void;
   getOrCreateStageState: (stageId: string) => StageState;
@@ -168,6 +226,30 @@ export function useStageState(): UseStageStateReturn {
     [],
   );
 
+  const setEquipmentList = useCallback((stageId: string, list: EquipmentListItem[]) => {
+    setStageStateMap((prev) => {
+      const current = prev[stageId] ?? makeDefaultStageState(stageId);
+      return { ...prev, [stageId]: { ...current, equipmentList: list } };
+    });
+    setSavedStageIds((prev) => {
+      const next = new Set(prev);
+      next.delete(stageId);
+      return next;
+    });
+  }, []);
+
+  const setInstrumentList = useCallback((stageId: string, list: InstrumentListItem[]) => {
+    setStageStateMap((prev) => {
+      const current = prev[stageId] ?? makeDefaultStageState(stageId);
+      return { ...prev, [stageId]: { ...current, instrumentList: list } };
+    });
+    setSavedStageIds((prev) => {
+      const next = new Set(prev);
+      next.delete(stageId);
+      return next;
+    });
+  }, []);
+
   const markSaved = useCallback((stageId: string) => {
     setSavedStageIds((prev) => new Set(prev).add(stageId));
   }, []);
@@ -185,6 +267,8 @@ export function useStageState(): UseStageStateReturn {
     savedStageIds,
     setStageState,
     updateParameter,
+    setEquipmentList,
+    setInstrumentList,
     markSaved,
     markUnsaved,
     getOrCreateStageState,

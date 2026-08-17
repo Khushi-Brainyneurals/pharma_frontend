@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { useEffect, useId, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 
 interface DialogProps {
   title: string;
@@ -17,6 +17,8 @@ const sizes = {
 
 export function Dialog({ title, busy = false, size = "lg", onClose, children }: DialogProps) {
   const titleId = useId();
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     function keyDown(event: KeyboardEvent) {
@@ -28,6 +30,16 @@ export function Dialog({ title, busy = false, size = "lg", onClose, children }: 
     document.addEventListener("keydown", keyDown);
     return () => document.removeEventListener("keydown", keyDown);
   }, [busy, onClose]);
+
+  useEffect(() => {
+    if (busy) return;
+
+    const timer = setTimeout(() => {
+      onCloseRef.current();
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [busy]);
 
   return (
     <div

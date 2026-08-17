@@ -1,4 +1,4 @@
-import { Check, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import type { ParameterKind, ParameterMode, StageParameter } from "../types/stages.types";
 import { ParameterCard } from "./ParameterCard";
 
@@ -13,7 +13,8 @@ interface ParameterPanelProps {
   onMinChange: (paramIndex: number, value: string) => void;
   onMaxChange: (paramIndex: number, value: string) => void;
   onCancel: () => void;
-  onSave: () => void;
+  /** Advances to the Equipment & Instrument screen - parameters are already persisted in local state. */
+  onContinue: () => void;
 }
 
 /**
@@ -35,7 +36,7 @@ export function ParameterPanel({
   onMinChange,
   onMaxChange,
   onCancel,
-  onSave,
+  onContinue,
 }: ParameterPanelProps) {
   const activeCount = parameters.filter((p) => p.enabled).length;
   const totalCount = parameters.length;
@@ -90,14 +91,14 @@ export function ParameterPanel({
             type="button"
             disabled={isSaving}
             className="preview-button-primary"
-            onClick={onSave}
+            onClick={onContinue}
           >
             {isSaving ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
-              <Check className="size-4" />
+              <ArrowRight className="size-4" />
             )}
-            Save parameters
+            Save and Add Equipment and Instrument
           </button>
         </div>
       </div>

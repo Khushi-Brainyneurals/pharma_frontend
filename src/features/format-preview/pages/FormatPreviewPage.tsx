@@ -130,13 +130,14 @@ export function FormatPreviewPage() {
 
   return (
     <AppShell user={user} unit={context?.unit ?? null} isLoadingUnit={isLoadingContext}>
-      <div className="sticky top-0 z-10 border-b border-border bg-surface px-4 py-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1180px]">
+      
+      <div className="sticky top-0 z-10  border-b border-border bg-surface px-4 py-4 sm:px-6 lg:px-8 ">
+        <div className="mx-auto px-1">
           <DocumentStepper steps={DOCUMENT_SELECTOR_STEPS} activeStepId="preview" />
         </div>
       </div>
       <div className="border-b border-border bg-surface px-4 py-4 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-3">
+        <div className="mx-auto flex flex-wrap items-center gap-3">
           <div className="mr-auto">
             <p className="text-micro font-semibold uppercase tracking-overline text-primary-dark">Step 3 of 7</p>
             <h1 className="mt-1 text-h1 font-semibold text-text">Page-1 preview</h1>
@@ -161,6 +162,7 @@ export function FormatPreviewPage() {
           ) : requestError ? (
             <ErrorState error={requestError} adminNotice={adminNotice} onRetry={() => void loadPreview()} onEditInputs={handleEditInputs} onNotifyAdmin={() => setAdminNotice("Notification could not be sent because no administrator-notification endpoint is configured. Please contact your Admin directly.")} onDashboard={() => navigate(ROUTES.statusBoard)} onNewDocument={() => navigate(ROUTES.newDocument)} />
           ) : document ? (
+            <>
             <div className="px-4 py-6 sm:px-6 lg:px-8">
               {hasWarnings ? (
                 <div className="mx-auto mb-4 max-w-[1100px] rounded-card border border-draft-fg/30 bg-draft-bg px-4 py-3" role="alert">
@@ -176,7 +178,7 @@ export function FormatPreviewPage() {
                 </div>
               ) : null}
 
-              <section className="mx-auto max-w-[1100px] overflow-hidden rounded-panel border border-border bg-surface shadow-sm" aria-label="Page-1 Word document">
+              <section className="mx-auto overflow-hidden rounded-panel border border-border bg-surface shadow-sm" aria-label="Page-1 Word document">
                 <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
                   <FileText className="size-4 text-primary" aria-hidden="true" />
                   <span className="min-w-0 flex-1 truncate text-small font-semibold text-text">{document.filename}</span>
@@ -184,14 +186,14 @@ export function FormatPreviewPage() {
                 </div>
                 <DocxPreview document={document} onReadyChange={handleDocumentReady} />
               </section>
-
-              <div className="mx-auto mt-4 flex max-w-[1100px] flex-wrap items-center gap-3 rounded-card border border-border bg-surface p-3">
+            </div>
+            <div className="mx-auto mt-4 flex flex-wrap items-center gap-3 border-t border-border bg-surface p-3">
                 <span className="mr-auto inline-flex items-center gap-2 text-small text-subdued"><CheckCircle2 className="size-4 text-success" aria-hidden="true" />Preview generated from the latest saved Core inputs</span>
                 <a href={document.objectUrl} download={document.filename} className="preview-button-secondary"><Download className="size-4" aria-hidden="true" />Download DOCX</a>
                 <button type="button" className="preview-button-secondary" onClick={handleEditInputs}><Pencil className="size-4" aria-hidden="true" />Edit inputs</button>
                 <button type="button" className="preview-button-primary" disabled={!canProceed} title={!canProceed ? "Wait for the returned document to render and review any extraction exceptions." : undefined} onClick={() => navigate(getCoverBomRoute(documentId), { state: { documentId, previewVersion: document.etag ?? document.documentKey, coreInputsDraft: routeState?.coreInputsDraft } })}>Proceed to Cover + BOM<ArrowRight className="size-4" aria-hidden="true" /></button>
-              </div>
             </div>
+            </>
           ) : (
             <PreviewStateCard icon={FileQuestion} title="No preview yet" message="Generate a Page-1 preview from the saved Core inputs before continuing." actions={<button type="button" className="preview-button-primary" onClick={() => void loadPreview()}><FileSearch className="size-4" aria-hidden="true" />Generate preview</button>} />
           )}

@@ -127,7 +127,7 @@ export function LoginPage() {
           onSubmit={handleSubmit(onSubmit)}
           noValidate
         >
-          {/* <AuthNotice message={visibleFeedback?.message} variant={visibleFeedback?.variant} /> */}
+          <AuthNotice message={visibleFeedback?.message} variant={visibleFeedback?.variant} />
 
           <Input
             id="username"

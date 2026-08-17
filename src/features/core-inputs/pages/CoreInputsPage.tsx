@@ -257,7 +257,7 @@ export function CoreInputsPage() {
   return (
     <AppShell user={user} unit={context?.unit ?? null} isLoadingUnit={isLoadingContext}>
       <div className="px-4 py-6 sm:px-6 lg:px-8">
-        <section className="mx-auto max-w-[1100px] rounded-panel border border-border bg-surface shadow-sm">
+        <section className="mx-auto rounded-panel border border-border bg-surface shadow-sm">
             <div className="p-5 sm:p-6">
               <DocumentStepper steps={DOCUMENT_SELECTOR_STEPS} activeStepId="inputs" />
             </div>
@@ -269,7 +269,7 @@ export function CoreInputsPage() {
                 className={`px-5 py-5 sm:px-6 ${isSubmitting ? "pointer-events-none opacity-55" : ""}`}
                 aria-busy={isSubmitting}
               >
-                <div className="max-w-[640px] space-y-5">
+                <div className="space-y-5">
                   <div className="flex items-center gap-2 text-small text-subdued">
                     <FileText className="size-4 text-subdued" aria-hidden="true" />
                     <span>New document - working draft - not yet a controlled record.</span>
@@ -381,43 +381,44 @@ export function CoreInputsPage() {
                       onChange={handleFieldChange("commercialMode")}
                     />
                   ) : null}
+                  
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <TextField
+                      id="header-size"
+                      label="Header size"
+                      value={form.headerSize}
+                      error={visibleErrors.headerSize}
+                      isRequired
+                      disabled={isSubmitting || Boolean(success)}
+                      helper="Header band size in inches, e.g. 0.25, 0.5, or 1."
+                      placeholder="0.5"
+                      type="number"
+                      min="0"
+                      step="any"
+                      onBlur={() =>
+                        setTouched((current) => ({ ...current, headerSize: true }))
+                      }
+                      onChange={handleFieldChange("headerSize")}
+                    />
 
-                  <TextField
-                    id="header-size"
-                    label="Header size"
-                    value={form.headerSize}
-                    error={visibleErrors.headerSize}
-                    isRequired
-                    disabled={isSubmitting || Boolean(success)}
-                    helper="Header band size in inches, e.g. 0.25, 0.5, or 1."
-                    placeholder="0.5"
-                    type="number"
-                    min="0"
-                    step="any"
-                    onBlur={() =>
-                      setTouched((current) => ({ ...current, headerSize: true }))
-                    }
-                    onChange={handleFieldChange("headerSize")}
-                  />
-
-                  <TextField
-                    id="footer-size"
-                    label="Footer size"
-                    value={form.footerSize}
-                    error={visibleErrors.footerSize}
-                    isRequired
-                    disabled={isSubmitting || Boolean(success)}
-                    helper="Footer band size in inches, e.g. 0.25, 0.5, or 1."
-                    placeholder="0.5"
-                    type="number"
-                    min="0"
-                    step="any"
-                    onBlur={() =>
-                      setTouched((current) => ({ ...current, footerSize: true }))
-                    }
-                    onChange={handleFieldChange("footerSize")}
-                  />
-
+                    <TextField
+                      id="footer-size"
+                      label="Footer size"
+                      value={form.footerSize}
+                      error={visibleErrors.footerSize}
+                      isRequired
+                      disabled={isSubmitting || Boolean(success)}
+                      helper="Footer band size in inches, e.g. 0.25, 0.5, or 1."
+                      placeholder="0.5"
+                      type="number"
+                      min="0"
+                      step="any"
+                      onBlur={() =>
+                        setTouched((current) => ({ ...current, footerSize: true }))
+                      }
+                      onChange={handleFieldChange("footerSize")}
+                    />
+                  </div>
                   <TextField
                     id="footer-template-no"
                     label="Footer template no."

@@ -33,6 +33,36 @@ export interface StageParameter {
   value: string;
 }
 
+// ─── Equipment / Instrument Types ──────────────────────────────────────────────
+
+/**
+ * One equipment record attached to a stage. Field names MUST NOT be renamed —
+ * they are the backend contract (`equipment_list[]` inside the stage payload).
+ */
+export interface EquipmentListItem {
+  /** Equipment master's `name_of_machine`. */
+  name: string;
+  /** Equipment master's `machine_id_no`. */
+  id: string;
+  /** The processing step selected from the equipment master's `steps[]`. */
+  processing_step: string;
+  /** CPP name -> value, for the CPP list of the selected processing step. */
+  cpp_values: Record<string, string>;
+  lot: number;
+}
+
+/**
+ * One instrument record attached to a stage (`instrument_list[]` inside the
+ * stage payload). Field names MUST NOT be renamed.
+ */
+export interface InstrumentListItem {
+  /** Instrument master's `name_of_instrument`. */
+  name: string;
+  /** Instrument master's `instrument_id_no`. */
+  id: string;
+  lot: number;
+}
+
 // ─── Stage Types ──────────────────────────────────────────────────────────────
 
 /**
@@ -45,9 +75,11 @@ export interface StageParameter {
 /** The set of selected stage keys - `stage.key`, never index or label. */
 export type SelectedStageKeys = Set<string>;
 
-/** Per-stage frontend state: the editable parameter list. */
+/** Per-stage frontend state: the editable parameter list plus equipment/instrument selections. */
 export interface StageState {
   parameters: StageParameter[];
+  equipmentList: EquipmentListItem[];
+  instrumentList: InstrumentListItem[];
 }
 
 /**
@@ -60,10 +92,11 @@ export type StageStateMap = Record<string, StageState>;
 
 /**
  * The payload sent to POST /api/bmr/documents/{documentId}/stages/{stageKey}/params
- * Only the `parameters` key is in scope for this release.
  */
 export interface StageParamsPayload {
   parameters: StageParameter[];
+  equipment_list: EquipmentListItem[];
+  instrument_list: InstrumentListItem[];
 }
 
 // ─── Save-State Helpers ───────────────────────────────────────────────────────

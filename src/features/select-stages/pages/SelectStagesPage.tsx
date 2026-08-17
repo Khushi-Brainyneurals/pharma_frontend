@@ -16,12 +16,27 @@ import { DOCUMENT_SELECTOR_STEPS } from "../../new-document/model/documentSelect
 import { getStageParams, setStageParams, setStages } from "../api/stages.api";
 import { StageAccordion } from "../components/StageAccordion";
 import { ParameterPanel } from "../components/ParameterPanel";
+import { EquipmentInstrumentStep } from "../components/EquipmentInstrumentStep";
+import {
+  filterEquipmentForStage,
+  filterInstrumentsForStage,
+  useEquipmentInstrumentMasters,
+} from "../hooks/useEquipmentInstrumentMasters";
 import {
   buildStageStateFromApi,
   hasSavedData,
   useStageState,
 } from "../hooks/useStageState";
-import type { ParameterKind, ParameterMode, StageState } from "../types/stages.types";
+import type {
+  EquipmentListItem,
+  InstrumentListItem,
+  ParameterKind,
+  ParameterMode,
+  StageState,
+} from "../types/stages.types";
+
+/** Which screen is showing inside a stage's expanded accordion panel. */
+type StagePanelStep = "parameters" | "equipment";
 
 // Only configuration supported for now - the stages API is scoped per (product_type, doc_type).
 // Kept as one named pair here (not scattered) so a real BMR-context value can replace it later.
@@ -83,6 +98,16 @@ export function SelectStagesPage() {
   // ── Accordion UI state ─────────────────────────────────────────────────────
   const [expandedStageId, setExpandedStageId] = useState<string | null>(null);
 
+  // ── Which screen (parameters vs equipment/instrument) is showing per stage ─
+  const [panelStepMap, setPanelStepMap] = useState<Record<string, StagePanelStep>>({});
+  const getPanelStep = useCallback(
+    (stageId: string): StagePanelStep => panelStepMap[stageId] ?? "parameters",
+    [panelStepMap],
+  );
+
+  // ── Equipment/Instrument master data - fetched once, shared by every stage ─
+  const equipmentInstrumentMasters = useEquipmentInstrumentMasters();
+
   // ── Loading / saving state ─────────────────────────────────────────────────
   const [loadingStageId, setLoadingStageId] = useState<string | null>(null);
   const [savingStageId, setSavingStageId] = useState<string | null>(null);
@@ -98,6 +123,8 @@ export function SelectStagesPage() {
     savedStageIds,
     setStageState,
     updateParameter,
+    setEquipmentList,
+    setInstrumentList,
     markSaved,
     markUnsaved,
     getOrCreateStageState,
@@ -211,6 +238,7 @@ export function SelectStagesPage() {
       if (expandedStageId === stageId) {
         // Collapse
         setExpandedStageId(null);
+        setPanelStepMap((prev) => ({ ...prev, [stageId]: "parameters" }));
         return;
       }
 
@@ -256,30 +284,98 @@ export function SelectStagesPage() {
     ],
   );
 
-  // ── Save parameters for a stage ────────────────────────────────────────────
-  const handleSaveParameters = useCallback(
-    async (stageId: string) => {
+  // ── "Save and Add Equipment and Instrument" - persists parameters only in
+  //    local state (no API call) and advances to the Equipment & Instrument
+  //    screen for the same stage. ──────────────────────────────────────────
+  const handleContinueToEquipment = useCallback(
+    (stageId: string) => {
+      setPanelStepMap((prev) => ({ ...prev, [stageId]: "equipment" }));
+      void equipmentInstrumentMasters.ensureLoaded();
+    },
+    [equipmentInstrumentMasters],
+  );
+
+  const handleBackToParameters = useCallback((stageId: string) => {
+    setPanelStepMap((prev) => ({ ...prev, [stageId]: "parameters" }));
+  }, []);
+
+  // ── Equipment / instrument list edits for one stage ─────────────────────
+  const makeEquipmentInstrumentHandlers = (stageId: string) => ({
+    onAddEquipment: (item: EquipmentListItem) => {
+      const state = getOrCreateStageState(stageId);
+      setEquipmentList(stageId, [...state.equipmentList, item]);
+    },
+    onRemoveEquipment: (index: number) => {
+      const state = getOrCreateStageState(stageId);
+      setEquipmentList(stageId, state.equipmentList.filter((_, i) => i !== index));
+    },
+    onAddInstrument: (item: InstrumentListItem) => {
+      const state = getOrCreateStageState(stageId);
+      setInstrumentList(stageId, [...state.instrumentList, item]);
+    },
+    onRemoveInstrument: (index: number) => {
+      const state = getOrCreateStageState(stageId);
+      setInstrumentList(stageId, state.instrumentList.filter((_, i) => i !== index));
+    },
+  });
+
+  // ── "Save and Continue" on the Equipment & Instrument screen - builds the
+  //    complete stage payload (parameters + equipment_list + instrument_list)
+  //    and POSTs it via the existing stage params API. `pendingEquipment` /
+  //    `pendingInstrument` are whatever is currently filled in on the visible
+  //    form but not yet committed via "Add equipment"/"Add instrument" - they
+  //    are merged in directly here (not via setEquipmentList first) so the
+  //    save never races the async state update and drops that last item. ──
+  const handleFinalSave = useCallback(
+    async (
+      stageId: string,
+      pendingEquipment: EquipmentListItem | null,
+      pendingInstrument: InstrumentListItem | null,
+    ) => {
       if (savingStageId || isContinuing) return;
       const state = getOrCreateStageState(stageId);
       const stageName = stageLabelByKey.get(stageId) ?? stageId;
 
+      const equipmentList = pendingEquipment ? [...state.equipmentList, pendingEquipment] : state.equipmentList;
+      const instrumentList = pendingInstrument
+        ? [...state.instrumentList, pendingInstrument]
+        : state.instrumentList;
+
       setSavingStageId(stageId);
       setError(null);
       try {
-        await setStageParams(documentId, stageId, { parameters: state.parameters });
-        lastSavedStateRef.current[stageId] = state;
+        await setStageParams(documentId, stageId, {
+          parameters: state.parameters,
+          equipment_list: equipmentList,
+          instrument_list: instrumentList,
+        });
+        const savedState = { ...state, equipmentList, instrumentList };
+        lastSavedStateRef.current[stageId] = savedState;
+        // Keep stageStateMap in sync so re-opening this stage shows the item
+        // that was just auto-included from the draft, not the pre-merge list.
+        if (pendingEquipment) setEquipmentList(stageId, equipmentList);
+        if (pendingInstrument) setInstrumentList(stageId, instrumentList);
         markSaved(stageId);
         setExpandedStageId(null);
-        setNotice(`${stageName} parameters saved.`);
+        setPanelStepMap((prev) => ({ ...prev, [stageId]: "parameters" }));
+        setNotice(`${stageName} saved.`);
       } catch (err) {
-        setError(
-          getApiErrorMessage(err, `Unable to save ${stageName} parameters.`),
-        );
+        // Entered data stays in stageStateMap (and the draft form) untouched - the user can retry.
+        setError(getApiErrorMessage(err, `Unable to save ${stageName}.`));
       } finally {
         setSavingStageId(null);
       }
     },
-    [documentId, getOrCreateStageState, isContinuing, markSaved, savingStageId, stageLabelByKey],
+    [
+      documentId,
+      getOrCreateStageState,
+      isContinuing,
+      markSaved,
+      savingStageId,
+      setEquipmentList,
+      setInstrumentList,
+      stageLabelByKey,
+    ],
   );
 
   // ── Cancel — revert to last saved snapshot ─────────────────────────────────
@@ -290,11 +386,18 @@ export function SelectStagesPage() {
         resetStageState(stageId, snapshot);
         markUnsaved(stageId);
         // Re-check if it was originally saved (it was, since we have a snapshot)
-        if (hasSavedData({ parameters: snapshot.parameters })) {
+        if (
+          hasSavedData({
+            parameters: snapshot.parameters,
+            equipment_list: snapshot.equipmentList,
+            instrument_list: snapshot.instrumentList,
+          })
+        ) {
           markSaved(stageId);
         }
       }
       setExpandedStageId(null);
+      setPanelStepMap((prev) => ({ ...prev, [stageId]: "parameters" }));
     },
     [markSaved, markUnsaved, resetStageState],
   );
@@ -361,12 +464,12 @@ export function SelectStagesPage() {
     <AppShell user={user} unit={context?.unit ?? null} isLoadingUnit={isLoadingContext}>
       {/* ── Step bar ── */}
       <div className="sticky top-0 z-10 border-b border-border bg-surface px-4 py-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1180px]">
+        <div className="mx-auto">
           <DocumentStepper steps={DOCUMENT_SELECTOR_STEPS} activeStepId="stages" />
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1180px] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 py-6 sm:px-6 lg:px-8">
         {/* ── Page header ── */}
         <header className="mb-6">
           <p className="text-micro font-semibold uppercase tracking-overline text-primary-dark">
@@ -450,7 +553,9 @@ export function SelectStagesPage() {
                   const isSaving = savingStageId === stage.key;
                   const isSaved = savedStageIds.has(stage.key);
                   const handlers = makeParamHandlers(stage.key);
+                  const equipInstHandlers = makeEquipmentInstrumentHandlers(stage.key);
                   const stageState = stageStateMap[stage.key] ?? null;
+                  const panelStep = getPanelStep(stage.key);
 
                   return (
                     <StageAccordion
@@ -468,19 +573,50 @@ export function SelectStagesPage() {
                       onToggleExpand={() => void handleToggleStage(stage.key)}
                     >
                       {isExpanded && stageState ? (
-                        <ParameterPanel
-                          stageId={stage.key}
-                          stageName={stage.label}
-                          parameters={stageState.parameters}
-                          isSaving={isSaving}
-                          onToggleEnabled={handlers.onToggleEnabled}
-                          onModeChange={handlers.onModeChange}
-                          onKindChange={handlers.onKindChange}
-                          onMinChange={handlers.onMinChange}
-                          onMaxChange={handlers.onMaxChange}
-                          onCancel={() => handleCancel(stage.key)}
-                          onSave={() => void handleSaveParameters(stage.key)}
-                        />
+                        panelStep === "equipment" ? (
+                          <EquipmentInstrumentStep
+                            stageKey={stage.key}
+                            stageName={stage.label}
+                            documentId={documentId}
+                            equipmentList={stageState.equipmentList}
+                            instrumentList={stageState.instrumentList}
+                            equipmentMasters={filterEquipmentForStage(
+                              equipmentInstrumentMasters.equipment,
+                              stage.key,
+                            )}
+                            instrumentMasters={filterInstrumentsForStage(
+                              equipmentInstrumentMasters.instruments,
+                              stage.key,
+                            )}
+                            isMastersLoading={equipmentInstrumentMasters.isLoading}
+                            mastersError={equipmentInstrumentMasters.error}
+                            isSaving={isSaving}
+                            onRetryMasters={() => void equipmentInstrumentMasters.reload()}
+                            onAddEquipment={equipInstHandlers.onAddEquipment}
+                            onRemoveEquipment={equipInstHandlers.onRemoveEquipment}
+                            onAddInstrument={equipInstHandlers.onAddInstrument}
+                            onRemoveInstrument={equipInstHandlers.onRemoveInstrument}
+                            onBack={() => handleBackToParameters(stage.key)}
+                            onCancel={() => handleCancel(stage.key)}
+                            onSave={(pendingEquipment, pendingInstrument) =>
+                              void handleFinalSave(stage.key, pendingEquipment, pendingInstrument)
+                            }
+                          />
+                        ) : (
+                          <ParameterPanel
+                            stageId={stage.key}
+                            stageName={stage.label}
+                            parameters={stageState.parameters}
+                            isSaving={isSaving}
+                            onToggleEnabled={handlers.onToggleEnabled}
+                            onModeChange={handlers.onModeChange}
+                            onKindChange={handlers.onKindChange}
+                            onMinChange={handlers.onMinChange}
+                            onMaxChange={handlers.onMaxChange}
+                            onCancel={() => handleCancel(stage.key)}
+                            onContinue={() => handleContinueToEquipment(stage.key)}
+                          />
+                        )
                       ) : null}
                     </StageAccordion>
                   );
@@ -495,7 +631,7 @@ export function SelectStagesPage() {
       {/* ── Sticky footer ── */}
       {canAuthor ? (
         <div className="sticky bottom-0 z-10 border-t border-border bg-surface/95 px-4 py-3 shadow-[0_-8px_24px_-18px_rgba(21,33,46,.45)] backdrop-blur sm:px-6 lg:px-8">
-          <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-3">
+          <div className="mx-auto flex flex-wrap items-center gap-3">
             <span className="mr-auto text-small text-subdued">
               {selectedStageKeys.size === 0
                 ? "Select at least one stage to continue."

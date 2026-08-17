@@ -58,7 +58,7 @@ export function LimitConfig({
               disabled={disabled}
               aria-label={`${parameterLabel} minimum`}
               placeholder="min"
-              className="h-8 w-20 rounded-control border border-border bg-surface px-2.5 text-small text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-8 w-16 rounded-control border border-border bg-surface px-2.5 text-small text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
               onChange={(e) => onMinChange(e.target.value)}
             />
             <span className="text-small text-subdued">–</span>
@@ -69,7 +69,7 @@ export function LimitConfig({
               disabled={disabled}
               aria-label={`${parameterLabel} maximum`}
               placeholder="max"
-              className="h-8 w-20 rounded-control border border-border bg-surface px-2.5 text-small text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-8 w-16 rounded-control border border-border bg-surface px-2.5 text-small text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
               onChange={(e) => onMaxChange(e.target.value)}
             />
           </>

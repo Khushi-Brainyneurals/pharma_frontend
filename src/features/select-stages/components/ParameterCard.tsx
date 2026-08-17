@@ -36,14 +36,14 @@ export function ParameterCard({
 
   return (
     <div
-      className={`flex flex-wrap items-start gap-x-4 gap-y-3 rounded-control border px-4 py-3 transition-colors ${
+      className={`flex flex-wrap items-start gap-y-3 rounded-control border px-4 py-3 transition-colors ${
         parameter.enabled
           ? "border-border bg-surface"
           : "border-border bg-muted/40"
       }`}
     >
       {/* ── Checkbox + Name + Unit ── */}
-      <div className="flex min-w-[200px] flex-1 items-center gap-3">
+      <div className="flex min-w-[160px] flex-1 items-center gap-3">
         <button
           type="button"
           role="checkbox"
@@ -73,7 +73,7 @@ export function ParameterCard({
       </div>
 
       {/* ── Mode Toggle ── */}
-      <div className="flex shrink-0 items-center flex-1 gap-3">
+      <div className="flex min-w-[160px] items-center flex-1 gap-1">
         <div
           className={`inline-flex items-center rounded-control border border-border text-small font-medium transition-opacity ${
             isDisabled ? "pointer-events-none opacity-40" : ""
