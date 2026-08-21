@@ -124,8 +124,8 @@ export const DOCUMENT_TYPE_OPTIONS: DocumentOption[] = [
 ];
 
 export const DOCUMENT_SIDEBAR_ITEMS: SidebarItem[] = [
+  { id: "status-board", label: "Dashboard" },
   { id: "new-document", label: "New document" },
-  { id: "status-board", label: "Status board" },
   { id: "version-history", label: "Version history" },
   { id: "notifications", label: "Notifications" },
   { id: "audit-trail", label: "Audit trail" },

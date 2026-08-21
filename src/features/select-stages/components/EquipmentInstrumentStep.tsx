@@ -1,6 +1,7 @@
 import { AlertCircle, ArrowLeft, Check, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 import type { EquipmentRow, InstrumentRow } from "../../master-data/api/masterData.types";
+import { stageEquipmentHasProcessingStep } from "../config/stageParameters.config";
 import type { EquipmentListItem, InstrumentListItem } from "../types/stages.types";
 import { EquipmentRowCard } from "./EquipmentRowCard";
 import { EquipmentSelection, type EquipmentSelectionHandle } from "./EquipmentSelection";
@@ -73,6 +74,7 @@ export function EquipmentInstrumentStep({
 }: EquipmentInstrumentStepProps) {
   const [mode, setMode] = useState<SelectionMode>("equipment");
   const disabled = isSaving;
+  const requiresProcessingStage = stageEquipmentHasProcessingStep(stageKey);
   const equipmentFormRef = useRef<EquipmentSelectionHandle>(null);
   const instrumentFormRef = useRef<InstrumentSelectionHandle>(null);
 
@@ -149,6 +151,7 @@ export function EquipmentInstrumentStep({
             ref={equipmentFormRef}
             masters={equipmentMasters}
             disabled={disabled}
+            requiresProcessingStage={requiresProcessingStage}
             onAdd={onAddEquipment}
           />
           {equipmentList.length > 0 ? (
@@ -172,6 +175,7 @@ export function EquipmentInstrumentStep({
             ref={instrumentFormRef}
             masters={instrumentMasters}
             disabled={disabled}
+            includeLayer={!requiresProcessingStage}
             onAdd={onAddInstrument}
           />
           {instrumentList.length > 0 ? (

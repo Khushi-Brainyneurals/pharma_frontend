@@ -31,15 +31,15 @@ export function Dialog({ title, busy = false, size = "lg", onClose, children }: 
     return () => document.removeEventListener("keydown", keyDown);
   }, [busy, onClose]);
 
-  useEffect(() => {
-    if (busy) return;
+  // useEffect(() => {
+  //   if (busy) return;
 
-    const timer = setTimeout(() => {
-      onCloseRef.current();
-    }, 5000);
+  //   const timer = setTimeout(() => {
+  //     onCloseRef.current();
+  //   }, 5000);
 
-    return () => clearTimeout(timer);
-  }, [busy]);
+  //   return () => clearTimeout(timer);
+  // }, [busy]);
 
   return (
     <div

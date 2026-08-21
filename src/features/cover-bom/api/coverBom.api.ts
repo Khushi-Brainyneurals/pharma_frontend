@@ -111,6 +111,7 @@ function normalizeDocument(value: CoverBomDocumentData): CoverBomDocumentData {
   return {
     ...value,
     layers: stringArray(value.layers),
+    coating_types: stringArray(value.coating_types),
     stages: Array.isArray(value.stages) ? value.stages : [],
     ingredients: Array.isArray(value.ingredients) ? value.ingredients : [],
     preview_url: typeof value.preview_url === "string" ? value.preview_url : "",

@@ -1,17 +1,26 @@
 import { ArrowRight, Loader2 } from "lucide-react";
+import { getStageExtraFields, stageUsesLayerLotSize } from "../config/stageParameters.config";
 import type { ParameterKind, ParameterMode, StageParameter } from "../types/stages.types";
+import { LotSizeByLayerField } from "./LotSizeByLayerField";
 import { ParameterCard } from "./ParameterCard";
+import { StageExtraFieldsSection } from "./StageExtraFieldsSection";
 
 interface ParameterPanelProps {
   stageId: string;
   stageName: string;
+  documentId: string;
   parameters: StageParameter[];
+  /** Stage-specific extra field values (e.g. `lot_size` for `dispensing_rm`). Empty object for stages with none. */
+  extraFields: Record<string, string>;
   isSaving: boolean;
   onToggleEnabled: (paramIndex: number) => void;
   onModeChange: (paramIndex: number, mode: ParameterMode) => void;
   onKindChange: (paramIndex: number, kind: ParameterKind) => void;
   onMinChange: (paramIndex: number, value: string) => void;
   onMaxChange: (paramIndex: number, value: string) => void;
+  onUnitChange: (paramIndex: number, value: string) => void;
+  onValueChange: (paramIndex: number, value: string) => void;
+  onExtraFieldChange: (fieldKey: string, value: string) => void;
   onCancel: () => void;
   /** Advances to the Equipment & Instrument screen - parameters are already persisted in local state. */
   onContinue: () => void;
@@ -28,18 +37,24 @@ interface ParameterPanelProps {
 export function ParameterPanel({
   stageId,
   stageName,
+  documentId,
   parameters,
+  extraFields,
   isSaving,
   onToggleEnabled,
   onModeChange,
   onKindChange,
   onMinChange,
   onMaxChange,
+  onUnitChange,
+  onValueChange,
+  onExtraFieldChange,
   onCancel,
   onContinue,
 }: ParameterPanelProps) {
   const activeCount = parameters.filter((p) => p.enabled).length;
   const totalCount = parameters.length;
+  const extraFieldDefs = getStageExtraFields(stageId);
 
   return (
     <div className="border-t border-border bg-background/40 px-5 py-5">
@@ -68,9 +83,31 @@ export function ParameterPanel({
             onKindChange={(kind) => onKindChange(index, kind)}
             onMinChange={(value) => onMinChange(index, value)}
             onMaxChange={(value) => onMaxChange(index, value)}
+            onUnitChange={(value) => onUnitChange(index, value)}
+            onValueChange={(value) => onValueChange(index, value)}
           />
         ))}
       </div>
+
+      {/* dispensing_rm collects Lot Size per Cover BOM layer; every other stage with
+          extra fields (e.g. dispensing_coating's Lot Size) uses the plain free-text
+          section, which renders nothing for stages with none. */}
+      {stageUsesLayerLotSize(stageId) ? (
+        <LotSizeByLayerField
+          documentId={documentId}
+          value={extraFields.lot_size ?? ""}
+          disabled={isSaving}
+          onChange={(value) => onExtraFieldChange("lot_size", value)}
+        />
+      ) : (
+        <StageExtraFieldsSection
+          stageId={stageId}
+          fields={extraFieldDefs}
+          values={extraFields}
+          disabled={isSaving}
+          onFieldChange={onExtraFieldChange}
+        />
+      )}
 
       {/* Footer */}
       <div className="mt-5 flex items-center justify-between gap-4">

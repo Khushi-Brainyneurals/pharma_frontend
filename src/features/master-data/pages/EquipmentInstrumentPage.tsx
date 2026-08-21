@@ -22,16 +22,11 @@ import { MasterDataShell } from "../components/MasterDataShell";
 import { StepsEditorDialog } from "../components/StepsEditorDialog";
 import { useApproval } from "../hooks/useApproval";
 import { useMasterList } from "../hooks/useMasterList";
-import { useStages } from "../hooks/useStages";
 import { getEditability, getMasterDataPermissions } from "../model/masterData.permissions";
 
 type TabId = "equipment" | "instrument";
 
 const STEPS_COLUMN_KEY = "steps";
-
-// Only configuration supported for now - the stages API is scoped per (product_type, doc_type).
-const STAGE_PRODUCT_TYPE = "tablet";
-const STAGE_DOC_TYPE = "bmr";
 
 const EQUIPMENT_COLUMN_KEYS = [
   "name_of_machine",
@@ -112,47 +107,33 @@ export function EquipmentInstrumentPage() {
   const permissions = useMemo(() => getMasterDataPermissions(user?.role), [user?.role]);
   const [tab, setTab] = useState<TabId>("equipment");
 
-  const stages = useStages({ productType: STAGE_PRODUCT_TYPE, docType: STAGE_DOC_TYPE });
-
-  const stageOptions = useMemo(
-    () => stages.options.map((option) => ({ value: option.key, label: option.label })),
-    [stages.options],
-  );
-
   const equipmentColumns = useMemo<MasterColumn[]>(
     () => [
       { key: "name_of_machine", label: "Name of machine", required: true, placeholder: "Machine name", minWidth: "min-w-52" },
       { key: "capacity", label: "Capacity", placeholder: "e.g. 100 kg" },
       { key: "working_capacity", label: "Working capacity", placeholder: "e.g. 80 kg" },
       { key: "machine_id_no", label: "M/C ID No.", placeholder: "Unique ID" },
-      { key: "stage", label: "Stage", kind: "select", options: stageOptions, optionsLoading: stages.isLoading },
+      { key: "stage", label: "Stage", placeholder: "e.g. Granulation" },
       { key: "processing_stage", label: "Processing stage", placeholder: "e.g. Compression", minWidth: "min-w-44" },
       {
         key: STEPS_COLUMN_KEY,
         label: "Process steps & CPPs",
-        minWidth: "min-w-56",
+        minWidth: "min-w-40",
         kind: "structured",
         summarize: summarizeSteps,
       },
     ],
-    [stageOptions, stages.isLoading],
+    [],
   );
 
   const instrumentColumns = useMemo<MasterColumn[]>(
     () => [
       { key: "name_of_instrument", label: "Name of instrument", required: true, placeholder: "Instrument name", minWidth: "min-w-52" },
       { key: "instrument_id_no", label: "Instrument ID No.", placeholder: "Unique ID" },
-      {
-        key: "location",
-        label: "Location",
-        minWidth: "min-w-44",
-        kind: "select",
-        options: stageOptions,
-        optionsLoading: stages.isLoading,
-      },
+      { key: "location", label: "Location", minWidth: "min-w-44", placeholder: "e.g. Granulation" },
       { key: "stage", label: "Stage", placeholder: "Area / room" },
     ],
-    [stageOptions, stages.isLoading],
+    [],
   );
 
   const equipment = useMasterList<EquipmentRow>({
@@ -333,32 +314,13 @@ export function EquipmentInstrumentPage() {
     <MasterDataShell
       title="Master data"
       heading="Equipment & instrument master"
-      description="The machines and instruments available to every document set. Both lists share a single approval."
+      description="The machines and instruments available to every document set."
       crumbs={[
         { label: "Master data", to: MASTER_DATA_ROUTES.hub },
         { label: "Equipment & instrument" },
       ]}
     >
       <div className="space-y-5">
-        {/* <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Master lists">
-          <TabButton
-            id="equipment"
-            label="Equipment"
-            count={equipment.rowCount}
-            isActive={tab === "equipment"}
-            isDirty={equipment.isDirty}
-            onSelect={setTab}
-          />
-          <TabButton
-            id="instrument"
-            label="Instruments"
-            count={instrument.rowCount}
-            isActive={tab === "instrument"}
-            isDirty={instrument.isDirty}
-            onSelect={setTab}
-          />
-        </div> */}
-
         <div
           className="relative inline-flex rounded-full bg-muted p-1"
           role="tablist"
@@ -437,26 +399,6 @@ export function EquipmentInstrumentPage() {
             {active.saveError ? <MasterDataBanner tone="error" message={active.saveError} /> : null}
             {active.notice ? <MasterDataBanner tone="success" message={active.notice} /> : null}
             {editability.reason ? <MasterDataBanner tone="locked" message={editability.reason} /> : null}
-            {stages.error ? (
-              <MasterDataBanner
-                tone="error"
-                message={`Stage options unavailable - ${stages.error}`}
-                actions={
-                  <button
-                    type="button"
-                    className="preview-button-secondary min-h-8 px-3"
-                    onClick={() => void stages.reload()}
-                  >
-                    Retry
-                  </button>
-                }
-              />
-            ) : !stages.isLoading && (!stages.supported || stageOptions.length === 0) ? (
-              <MasterDataBanner
-                tone="info"
-                message="No stage options are configured for this product type and document type yet."
-              />
-            ) : null}
           </div>
 
           <div className="mt-4">
@@ -572,14 +514,14 @@ function TabButton({
       aria-selected={isActive}
       aria-controls={`panel-${id}`}
       onClick={() => onSelect(id)}
-      className={`relative inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-small font-semibold transition-colors duration-300 ${
+      className={`relative inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors duration-300 ${
         isActive
-          ? "border-primary/25 bg-accent-soft text-primary-dark"
+          ? "border-primary/25 bg-primary text-white shadow-sm"
           : "text-subdued hover:text-text border-0"
       }`}
     >
       {label}
-      <span className="rounded-pill bg-muted px-2 py-0.5 font-mono text-[11px] text-subdued">{count}</span>
+      {/* <span className="rounded-pill bg-muted px-2 py-0.5 font-mono text-[11px] text-subdued">{count}</span> */}
       {isDirty ? (
         <span className="size-1.5 rounded-full bg-draft-fg" aria-label="Unsaved changes" />
       ) : null}

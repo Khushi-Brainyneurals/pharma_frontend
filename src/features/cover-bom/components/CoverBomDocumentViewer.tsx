@@ -10,6 +10,9 @@ import {
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { PreviewDocument } from "../../format-preview/model/formatPreview.types";
 
+const SEARCH_HIGHLIGHT_CLASS = "bom-search-highlight";
+const SEARCH_DEBOUNCE_MS = 400;
+
 export function CoverBomDocumentViewer({ document }: { document: PreviewDocument }) {
   const viewerRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -18,7 +21,8 @@ export function CoverBomDocumentViewer({ document }: { document: PreviewDocument
   const [pageCount, setPageCount] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [query, setQuery] = useState("");
-  const [searchMessage, setSearchMessage] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [matchCount, setMatchCount] = useState<number | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -50,6 +54,33 @@ export function CoverBomDocumentViewer({ document }: { document: PreviewDocument
     return () => { active = false; host.replaceChildren(); };
   }, [document.blob, document.documentKey]);
 
+  // Debounce the search term so highlighting doesn't run on every keystroke.
+  useEffect(() => {
+    if (!query.trim()) {
+      setDebouncedQuery("");
+      return;
+    }
+    const timer = window.setTimeout(() => setDebouncedQuery(query), SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  // Re-highlight whenever the debounced term changes or a (new) document finishes rendering.
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || !ready) return;
+    clearSearchHighlights(host);
+    const term = debouncedQuery.trim();
+    if (!term) {
+      setMatchCount(null);
+      return;
+    }
+    const count = applySearchHighlights(host, term);
+    setMatchCount(count);
+    if (count > 0) {
+      host.querySelector(`mark.${SEARCH_HIGHLIGHT_CLASS}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [debouncedQuery, ready]);
+
   function fitWidth() {
     const viewportWidth = viewerRef.current?.clientWidth ?? 0;
     const pageWidth = hostRef.current?.querySelector<HTMLElement>("section.pharmadoc-word")?.offsetWidth ?? 816;
@@ -58,21 +89,16 @@ export function CoverBomDocumentViewer({ document }: { document: PreviewDocument
 
   function findText(event: FormEvent) {
     event.preventDefault();
-    const normalized = query.trim().toLowerCase();
-    const host = hostRef.current;
-    if (!normalized || !host) return;
-    const walker = window.document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
-    let node = walker.nextNode();
-    while (node) {
-      if (node.textContent?.toLowerCase().includes(normalized)) {
-        node.parentElement?.scrollIntoView({ behavior: "smooth", block: "center" });
-        setSearchMessage(`Found “${query.trim()}” in the document.`);
-        return;
-      }
-      node = walker.nextNode();
-    }
-    setSearchMessage(`No match for “${query.trim()}”.`);
+    // Explicit submit (Enter / search button) applies the term immediately, bypassing the debounce.
+    setDebouncedQuery(query);
   }
+
+  const trimmedTerm = debouncedQuery.trim();
+  const searchMessage = trimmedTerm && matchCount !== null
+    ? matchCount > 0
+      ? `${matchCount} match${matchCount === 1 ? "" : "es"} for “${trimmedTerm}”.`
+      : `No matches for “${trimmedTerm}”.`
+    : null;
 
   return (
     <section ref={viewerRef} className="overflow-hidden rounded-panel border border-border bg-surface shadow-sm" aria-label="Read-only Cover and BOM Word preview">
@@ -82,7 +108,7 @@ export function CoverBomDocumentViewer({ document }: { document: PreviewDocument
           <input id="bom-document-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search document" className="min-h-9 min-w-0 flex-1 rounded-l-control border border-border bg-surface px-3 text-small outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
           <button type="submit" className="inline-flex min-h-9 items-center rounded-r-control border border-l-0 border-border px-3 text-subdued hover:bg-muted" aria-label="Search"><Search className="size-4" /></button>
         </form>
-        <span className="text-micro text-subdued" aria-live="polite">{pageCount ? `${pageCount} pages` : "Counting pages…"}</span>
+        {/* <span className="text-micro text-subdued" aria-live="polite">{pageCount ? `${pageCount} pages` : "Counting pages…"}</span> */}
         <button type="button" className="viewer-tool" onClick={() => setZoom((value) => Math.max(0.5, value - 0.1))} aria-label="Zoom out"><Minus className="size-4" /></button>
         <span className="w-12 text-center text-micro font-medium tabular-nums text-text">{Math.round(zoom * 100)}%</span>
         <button type="button" className="viewer-tool" onClick={() => setZoom((value) => Math.min(1.5, value + 0.1))} aria-label="Zoom in"><Plus className="size-4" /></button>
@@ -97,4 +123,64 @@ export function CoverBomDocumentViewer({ document }: { document: PreviewDocument
       </div>
     </section>
   );
+}
+
+/* ── Search highlighting: safe DOM text-node manipulation, no HTML string replacement ── */
+
+function clearSearchHighlights(host: HTMLElement) {
+  const marks = host.querySelectorAll(`mark.${SEARCH_HIGHLIGHT_CLASS}`);
+  marks.forEach((mark) => {
+    const parent = mark.parentNode;
+    if (!parent) return;
+    parent.replaceChild(window.document.createTextNode(mark.textContent ?? ""), mark);
+    parent.normalize();
+  });
+}
+
+function applySearchHighlights(host: HTMLElement, term: string): number {
+  const pattern = new RegExp(escapeForRegExp(term), "gi");
+  const walker = window.document.createTreeWalker(host, NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) => {
+      const parentTag = node.parentElement?.tagName;
+      if (parentTag === "SCRIPT" || parentTag === "STYLE") return NodeFilter.FILTER_REJECT;
+      return node.textContent ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+    },
+  });
+
+  // Collect text nodes first: mutating nodes while the walker is traversing would break it.
+  const textNodes: Text[] = [];
+  let node = walker.nextNode();
+  while (node) {
+    textNodes.push(node as Text);
+    node = walker.nextNode();
+  }
+
+  let matchCount = 0;
+  for (const textNode of textNodes) {
+    const text = textNode.textContent ?? "";
+    pattern.lastIndex = 0;
+    if (!pattern.test(text)) continue;
+    pattern.lastIndex = 0;
+
+    const fragment = window.document.createDocumentFragment();
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(text))) {
+      if (match.index > lastIndex) fragment.append(window.document.createTextNode(text.slice(lastIndex, match.index)));
+      const mark = window.document.createElement("mark");
+      mark.className = `${SEARCH_HIGHLIGHT_CLASS} rounded-sm bg-accent-soft text-primary-dark`;
+      mark.textContent = match[0];
+      fragment.append(mark);
+      matchCount += 1;
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length) fragment.append(window.document.createTextNode(text.slice(lastIndex)));
+    textNode.parentNode?.replaceChild(fragment, textNode);
+  }
+
+  return matchCount;
+}
+
+function escapeForRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

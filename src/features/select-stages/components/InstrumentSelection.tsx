@@ -7,6 +7,12 @@ interface InstrumentSelectionProps {
   /** Already filtered to the current stage. */
   masters: InstrumentRow[];
   disabled?: boolean;
+  /**
+   * Whether this stage's instrument entries carry a `layer` field - true for
+   * dispensing/inspection stages, see `stageUsesLayerField`. When true, the
+   * added item includes `layer: ""` (never user-selected).
+   */
+  includeLayer: boolean;
   onAdd: (item: InstrumentListItem) => void;
 }
 
@@ -27,10 +33,9 @@ export interface InstrumentSelectionHandle {
  * come straight from the (stage-filtered) instrument master data.
  */
 export const InstrumentSelection = forwardRef<InstrumentSelectionHandle, InstrumentSelectionProps>(
-  function InstrumentSelection({ masters, disabled = false, onAdd }, ref) {
+  function InstrumentSelection({ masters, disabled = false, includeLayer, onAdd }, ref) {
   const [name, setName] = useState("");
   const [id, setId] = useState("");
-  const [lot, setLot] = useState("1");
 
   const names = useMemo(() => {
     const seen = new Set<string>();
@@ -62,12 +67,12 @@ export const InstrumentSelection = forwardRef<InstrumentSelectionHandle, Instrum
   function buildPendingItem(): InstrumentListItem | null {
     if (!canAdd || !selectedRow) return null;
 
-    const lotValue = Number(lot);
-    return {
+    const base: InstrumentListItem = {
       name: selectedRow.name_of_instrument,
       id: selectedRow.instrument_id_no ?? "",
-      lot: Number.isFinite(lotValue) && lotValue > 0 ? lotValue : 1,
     };
+
+    return includeLayer ? { ...base, layer: "" } : base;
   }
 
   useImperativeHandle(ref, () => ({ getPendingItem: buildPendingItem }));
@@ -80,7 +85,6 @@ export const InstrumentSelection = forwardRef<InstrumentSelectionHandle, Instrum
 
     setName("");
     setId("");
-    setLot("1");
   }
 
   return (
@@ -155,20 +159,7 @@ export const InstrumentSelection = forwardRef<InstrumentSelectionHandle, Instrum
         </div>
       )}
 
-      {/* ── Lot + add ── */}
-      <div className="flex flex-wrap items-end justify-between gap-3 rounded-control border border-border bg-background/40 p-4">
-        <div className="space-y-1">
-          <label className="block text-micro font-semibold text-subdued">Lot</label>
-          <input
-            type="number"
-            min={1}
-            value={lot}
-            disabled={disabled}
-            className="h-9 w-24 rounded-control border border-border bg-surface px-2.5 text-small text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
-            onChange={(e) => setLot(e.target.value)}
-          />
-        </div>
-        <button
+      <button
           type="button"
           disabled={disabled || !canAdd}
           className="preview-button-secondary min-h-8 px-3"
@@ -177,7 +168,6 @@ export const InstrumentSelection = forwardRef<InstrumentSelectionHandle, Instrum
           <Plus className="size-4" />
           Add instrument
         </button>
-      </div>
     </div>
   );
   },

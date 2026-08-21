@@ -178,7 +178,6 @@ export function CoreInputsPage() {
   function handleFieldChange(
     field: keyof Pick<
       CoreInputsFormState,
-      | "batchSize"
       | "batchType"
       | "commercialMode"
       | "headerSize"
@@ -199,6 +198,14 @@ export function CoreInputsPage() {
     };
   }
 
+  function handleBatchSizeChange(event: ChangeEvent<HTMLInputElement>) {
+    const formatted = formatBatchSizeInput(event.target.value);
+
+    setForm((current) => ({ ...current, batchSize: formatted }));
+    setTouched((current) => ({ ...current, batchSize: true }));
+    setApiError(null);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitAttempted(true);
@@ -210,7 +217,7 @@ export function CoreInputsPage() {
     }
 
     const mfc = form.mfc;
-    const pp = form.pp;
+    const pp = form.pp; 
     const batchType = form.batchType;
     const batchSize = parseWholeNumber(form.batchSize);
     const headerSize = parsePositiveNumber(form.headerSize);
@@ -342,12 +349,13 @@ export function CoreInputsPage() {
                     label="Batch size"
                     value={form.batchSize}
                     error={visibleErrors.batchSize}
-                    placeholder="180000"
+                    placeholder="1,80,000"
                     isRequired
                     disabled={isSubmitting || Boolean(success)}
-                    helper="Everything scales to this in numbers."
+                    helper="Enter the batch size as a whole number of tablets."
+                    inputMode="numeric"
                     onBlur={() => setTouched((current) => ({ ...current, batchSize: true }))}
-                    onChange={handleFieldChange("batchSize")}
+                    onChange={handleBatchSizeChange}
                   />
 
                   <SelectField
@@ -574,6 +582,7 @@ function TextField({
   type = "text",
   min,
   step,
+  inputMode,
   isRequired,
   disabled,
   onBlur,
@@ -588,6 +597,7 @@ function TextField({
   type?: "number" | "text";
   min?: string;
   step?: string;
+  inputMode?: "numeric" | "decimal";
   isRequired?: boolean;
   disabled?: boolean;
   onBlur: () => void;
@@ -608,6 +618,7 @@ function TextField({
         type={type}
         min={min}
         step={step}
+        inputMode={inputMode}
         disabled={disabled}
         aria-invalid={Boolean(error)}
         aria-describedby={errorId}
@@ -840,6 +851,22 @@ function isPdf(file: File) {
   return file.type === "application/pdf" || file.name.toLowerCase().trim().endsWith(".pdf");
 }
 
+/**
+ * Formats a Batch size input as the user types: strips everything but digits
+ * (drops manually-typed commas and blocks decimal points, so "18.25" becomes
+ * "1825" rather than being accepted as a fraction) then re-groups using the
+ * Indian numbering system (2s after the first 3 digits from the right), e.g.
+ * "180000" -> "1,80,000". The stored/displayed value keeps these commas -
+ * `parseWholeNumber` already strips them back out for submission/validation.
+ */
+function formatBatchSizeInput(rawValue: string): string {
+  const digitsOnly = rawValue.replace(/\D/g, "");
+  if (!digitsOnly) {
+    return "";
+  }
+  return Number(digitsOnly).toLocaleString("en-IN");
+}
+
 function parseWholeNumber(value: string) {
   const normalized = value.replace(/,/g, "").trim();
 
@@ -874,7 +901,7 @@ function getBatchSizeWarning(value: string) {
   const parsed = parseWholeNumber(value);
 
   if (parsed !== null && parsed >= 5_000_000) {
-    return `Batch size ${parsed.toLocaleString()} is unusually large - confirm this is correct.`;
+    return `Batch size ${parsed.toLocaleString("en-IN")} is unusually large - confirm this is correct.`;
   }
 
   return null;

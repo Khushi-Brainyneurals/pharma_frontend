@@ -33,6 +33,7 @@ const iconMap = {
 /** Sidebar entries that have a real destination; the rest stay inert. */
 const ROUTED_SIDEBAR_ITEMS: Record<string, string | undefined> = {
   "new-document": ROUTES.newDocument,
+  "status-board": ROUTES.statusBoard,
   "master-data": MASTER_DATA_ROUTES.hub,
 };
 

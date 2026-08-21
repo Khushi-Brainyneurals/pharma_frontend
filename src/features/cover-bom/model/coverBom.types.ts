@@ -40,6 +40,7 @@ export interface CoverBomDocumentData {
   commercial_mode: string;
   batch_size: number;
   layers: string[];
+  coating_types: string[];
   stages: unknown[];
   ingredients: BomIngredient[];
   preview_url: string;
@@ -80,6 +81,9 @@ export interface EditableBomState {
     srNo: string;
     ingredientName: string;
     uom: string;
+    materialCode: string;
+    qtyPerMfcBatch: string;
+    qtyRequiredProduction: string;
   }>;
 }
 
@@ -87,6 +91,9 @@ export interface IngredientEditPayload {
   ingredient_name: string;
   sr_no: number;
   uom: string;
+  material_code: string;
+  qty_per_mfc_batch: number;
+  qty_required_production: number;
 }
 
 export interface UpdateBomPayload {

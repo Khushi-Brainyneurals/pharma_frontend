@@ -16,7 +16,6 @@ export function InstrumentRowCard({ item, disabled = false, onRemove }: Instrume
         <span className="rounded-pill bg-muted px-2 py-0.5 font-mono text-mono-sm text-subdued">
           {item.id}
         </span>
-        <span className="rounded-pill bg-muted px-2 py-0.5 text-micro text-subdued">Lot {item.lot}</span>
       </div>
 
       <button

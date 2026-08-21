@@ -217,6 +217,9 @@ function toEditable(data: CoverBomDocumentData): EditableBomState {
       srNo: String(ingredient.sr_no),
       ingredientName: ingredient.ingredient_name,
       uom: ingredient.uom,
+      materialCode: ingredient.material_code ?? "",
+      qtyPerMfcBatch: String(ingredient.qty_per_mfc_batch ?? ""),
+      qtyRequiredProduction: String(ingredient.qty_required_production ?? ""),
     })),
   };
 }
@@ -231,8 +234,23 @@ function buildPatch(data: CoverBomDocumentData, draft: EditableBomState, user: s
   if (Object.keys(core).length) payload.core = core;
   const edits = draft.ingredients.flatMap((row, index) => {
     const original = data.ingredients[index];
-    if (!original || (row.ingredientName === original.ingredient_name && row.srNo === String(original.sr_no) && row.uom === original.uom)) return [];
-    return [{ ingredient_name: row.ingredientName.trim(), sr_no: Number(row.srNo), uom: row.uom.trim() }];
+    if (!original) return [];
+    const unchanged =
+      row.ingredientName === original.ingredient_name &&
+      row.srNo === String(original.sr_no) &&
+      row.uom === original.uom &&
+      row.materialCode === (original.material_code ?? "") &&
+      row.qtyPerMfcBatch === String(original.qty_per_mfc_batch ?? "") &&
+      row.qtyRequiredProduction === String(original.qty_required_production ?? "");
+    if (unchanged) return [];
+    return [{
+      ingredient_name: row.ingredientName.trim(),
+      sr_no: Number(row.srNo),
+      uom: row.uom.trim(),
+      material_code: row.materialCode.trim(),
+      qty_per_mfc_batch: Number(row.qtyPerMfcBatch),
+      qty_required_production: Number(row.qtyRequiredProduction),
+    }];
   });
   if (edits.length) payload.ingredient_edits = edits;
   return payload;
@@ -258,6 +276,11 @@ function validateDraft(draft: EditableBomState) {
     if (!row.uom.trim()) errors[`ingredient-${index}-uom`] = "UOM is required.";
     const srNo = Number(row.srNo);
     if (!Number.isInteger(srNo) || srNo < 0) errors[`ingredient-${index}-sr`] = "Use a whole number.";
+    if (!row.materialCode.trim()) errors[`ingredient-${index}-material`] = "Material code is required.";
+    const qtyPerMfcBatch = Number(row.qtyPerMfcBatch);
+    if (!Number.isFinite(qtyPerMfcBatch) || qtyPerMfcBatch < 0) errors[`ingredient-${index}-qtymfc`] = "Enter a valid quantity.";
+    const qtyRequiredProduction = Number(row.qtyRequiredProduction);
+    if (!Number.isFinite(qtyRequiredProduction) || qtyRequiredProduction < 0) errors[`ingredient-${index}-qtyprod`] = "Enter a valid quantity.";
   });
   return errors;
 }

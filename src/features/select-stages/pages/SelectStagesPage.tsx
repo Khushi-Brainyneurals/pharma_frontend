@@ -17,6 +17,8 @@ import { getStageParams, setStageParams, setStages } from "../api/stages.api";
 import { StageAccordion } from "../components/StageAccordion";
 import { ParameterPanel } from "../components/ParameterPanel";
 import { EquipmentInstrumentStep } from "../components/EquipmentInstrumentStep";
+import { YieldLimitPanel } from "../components/YieldLimitPanel";
+import { isYieldReconciliationStage, stageUsesLayerField } from "../config/stageParameters.config";
 import {
   filterEquipmentForStage,
   filterInstrumentsForStage,
@@ -25,6 +27,7 @@ import {
 import {
   buildStageStateFromApi,
   hasSavedData,
+  toApiParameters,
   useStageState,
 } from "../hooks/useStageState";
 import type {
@@ -125,6 +128,8 @@ export function SelectStagesPage() {
     updateParameter,
     setEquipmentList,
     setInstrumentList,
+    updateExtraField,
+    updateYieldLimit,
     markSaved,
     markUnsaved,
     getOrCreateStageState,
@@ -344,10 +349,16 @@ export function SelectStagesPage() {
       setSavingStageId(stageId);
       setError(null);
       try {
+        // Omit unchecked parameters from the payload entirely, instead of
+        // sending them disabled - applies to every stage's parameters array.
+        const parametersToSend = state.parameters.filter((p) => p.enabled);
+
         await setStageParams(documentId, stageId, {
-          parameters: state.parameters,
+          parameters: toApiParameters(parametersToSend, stageUsesLayerField(stageId)),
           equipment_list: equipmentList,
           instrument_list: instrumentList,
+          ...state.extraFields,
+          user: user?.username ?? user?.id ?? "api",
         });
         const savedState = { ...state, equipmentList, instrumentList };
         lastSavedStateRef.current[stageId] = savedState;
@@ -375,7 +386,36 @@ export function SelectStagesPage() {
       setEquipmentList,
       setInstrumentList,
       stageLabelByKey,
+      user,
     ],
+  );
+
+  // ── "Save" for batch_yield_reconciliation — the final stage has no
+  //    parameters/equipment/instrument, just `{ yield_limit, user }`. ──────
+  const handleYieldSave = useCallback(
+    async (stageId: string) => {
+      if (savingStageId || isContinuing) return;
+      const state = getOrCreateStageState(stageId);
+      const stageName = stageLabelByKey.get(stageId) ?? stageId;
+
+      setSavingStageId(stageId);
+      setError(null);
+      try {
+        await setStageParams(documentId, stageId, {
+          yield_limit: state.yieldLimit,
+          user: user?.username ?? user?.id ?? "api",
+        });
+        lastSavedStateRef.current[stageId] = state;
+        markSaved(stageId);
+        setExpandedStageId(null);
+        setNotice(`${stageName} saved.`);
+      } catch (err) {
+        setError(getApiErrorMessage(err, `Unable to save ${stageName}.`));
+      } finally {
+        setSavingStageId(null);
+      }
+    },
+    [documentId, getOrCreateStageState, isContinuing, markSaved, savingStageId, stageLabelByKey, user],
   );
 
   // ── Cancel — revert to last saved snapshot ─────────────────────────────────
@@ -391,6 +431,7 @@ export function SelectStagesPage() {
             parameters: snapshot.parameters,
             equipment_list: snapshot.equipmentList,
             instrument_list: snapshot.instrumentList,
+            yield_limit: snapshot.yieldLimit,
           })
         ) {
           markSaved(stageId);
@@ -452,6 +493,15 @@ export function SelectStagesPage() {
     },
     onMaxChange: (paramIndex: number, value: string) => {
       updateParameter(stageId, paramIndex, "max", value);
+    },
+    onUnitChange: (paramIndex: number, value: string) => {
+      updateParameter(stageId, paramIndex, "unit", value);
+    },
+    onValueChange: (paramIndex: number, value: string) => {
+      updateParameter(stageId, paramIndex, "value", value);
+    },
+    onExtraFieldChange: (fieldKey: string, value: string) => {
+      updateExtraField(stageId, fieldKey, value);
     },
   });
 
@@ -573,7 +623,17 @@ export function SelectStagesPage() {
                       onToggleExpand={() => void handleToggleStage(stage.key)}
                     >
                       {isExpanded && stageState ? (
-                        panelStep === "equipment" ? (
+                        isYieldReconciliationStage(stage.key) ? (
+                          <YieldLimitPanel
+                            stageId={stage.key}
+                            stageName={stage.label}
+                            yieldLimit={stageState.yieldLimit}
+                            isSaving={isSaving}
+                            onYieldLimitChange={(value) => updateYieldLimit(stage.key, value)}
+                            onCancel={() => handleCancel(stage.key)}
+                            onSave={() => void handleYieldSave(stage.key)}
+                          />
+                        ) : panelStep === "equipment" ? (
                           <EquipmentInstrumentStep
                             stageKey={stage.key}
                             stageName={stage.label}
@@ -606,13 +666,18 @@ export function SelectStagesPage() {
                           <ParameterPanel
                             stageId={stage.key}
                             stageName={stage.label}
+                            documentId={documentId}
                             parameters={stageState.parameters}
+                            extraFields={stageState.extraFields}
                             isSaving={isSaving}
                             onToggleEnabled={handlers.onToggleEnabled}
                             onModeChange={handlers.onModeChange}
                             onKindChange={handlers.onKindChange}
                             onMinChange={handlers.onMinChange}
                             onMaxChange={handlers.onMaxChange}
+                            onUnitChange={handlers.onUnitChange}
+                            onValueChange={handlers.onValueChange}
+                            onExtraFieldChange={handlers.onExtraFieldChange}
                             onCancel={() => handleCancel(stage.key)}
                             onContinue={() => handleContinueToEquipment(stage.key)}
                           />

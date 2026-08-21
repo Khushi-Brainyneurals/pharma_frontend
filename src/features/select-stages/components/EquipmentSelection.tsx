@@ -8,6 +8,14 @@ interface EquipmentSelectionProps {
   /** Already filtered to the current stage. */
   masters: EquipmentRow[];
   disabled?: boolean;
+  /**
+   * Whether this stage's equipment entries carry a processing step / CPP
+   * breakdown. False for dispensing/inspection stages - see
+   * `stageEquipmentHasProcessingStep`. When false, the Processing stage and
+   * Critical process parameters cards are hidden and the added item omits
+   * `processing_step`/`cpp_values` entirely.
+   */
+  requiresProcessingStage: boolean;
   onAdd: (item: EquipmentListItem) => void;
 }
 
@@ -28,7 +36,7 @@ export interface EquipmentSelectionHandle {
  * here is hardcoded. Adding an entry resets the form so another can follow.
  */
 export const EquipmentSelection = forwardRef<EquipmentSelectionHandle, EquipmentSelectionProps>(
-  function EquipmentSelection({ masters, disabled = false, onAdd }, ref) {
+  function EquipmentSelection({ masters, disabled = false, requiresProcessingStage, onAdd }, ref) {
   const [name, setName] = useState("");
   const [id, setId] = useState("");
   const [step, setStep] = useState("");
@@ -37,7 +45,6 @@ export const EquipmentSelection = forwardRef<EquipmentSelectionHandle, Equipment
   // steps (or equipment) only changes which key is being displayed, it never
   // clears the map itself.
   const [cppByKey, setCppByKey] = useState<Record<string, Record<string, string>>>({});
-  const [lot, setLot] = useState("1");
 
   const names = useMemo(() => {
     const seen = new Set<string>();
@@ -91,11 +98,20 @@ export const EquipmentSelection = forwardRef<EquipmentSelectionHandle, Equipment
     }));
   }
 
-  const canAdd = Boolean(name && id && (steps.length === 0 || step));
+  const canAdd = Boolean(
+    name && id && (!requiresProcessingStage || steps.length === 0 || step),
+  );
 
   /** Builds the item from whatever is currently filled in, or null if incomplete. */
   function buildPendingItem(): EquipmentListItem | null {
     if (!canAdd || !selectedRow) return null;
+
+    const base: EquipmentListItem = {
+      name: selectedRow.name_of_machine,
+      id: selectedRow.machine_id_no ?? "",
+    };
+
+    if (!requiresProcessingStage) return { ...base, layer: "" };
 
     const savedValues = cppKey ? cppByKey[cppKey] ?? {} : {};
     const cpp_values: Record<string, string> = {};
@@ -103,14 +119,7 @@ export const EquipmentSelection = forwardRef<EquipmentSelectionHandle, Equipment
       cpp_values[cppName] = savedValues[cppName] ?? "";
     }
 
-    const lotValue = Number(lot);
-    return {
-      name: selectedRow.name_of_machine,
-      id: selectedRow.machine_id_no ?? "",
-      processing_step: step,
-      cpp_values,
-      lot: Number.isFinite(lotValue) && lotValue > 0 ? lotValue : 1,
-    };
+    return { ...base, processing_step: step, cpp_values };
   }
 
   useImperativeHandle(ref, () => ({ getPendingItem: buildPendingItem }));
@@ -124,7 +133,6 @@ export const EquipmentSelection = forwardRef<EquipmentSelectionHandle, Equipment
     setName("");
     setId("");
     setStep("");
-    setLot("1");
   }
 
   return (
@@ -202,107 +210,96 @@ export const EquipmentSelection = forwardRef<EquipmentSelectionHandle, Equipment
             ) : null}
           </div>
 
-          {/* ── Processing stage card ── */}
-          <div className="rounded-control border border-border bg-surface p-4">
-            <div className="mb-3 flex items-baseline gap-3">
-              <p className="text-micro font-semibold uppercase tracking-overline text-subdued">
-                Processing stage
-              </p>
-              {steps.length > 0 ? (
-                <span className="font-mono text-micro text-subdued">
-                  {steps.length} step{steps.length > 1 ? "s" : ""} · from equipment master
-                </span>
-              ) : null}
-            </div>
-            {!selectedRow ? (
-              <p className="text-small italic text-subdued">Select equipment above to load its stages.</p>
-            ) : steps.length === 0 ? (
-              <p className="text-small italic text-subdued">
-                No processing steps recorded for this equipment.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {steps.map((s) => (
-                  <button
-                    key={s.step}
-                    type="button"
-                    disabled={disabled}
-                    aria-pressed={step === s.step}
-                    className={`rounded-pill border px-3 py-1.5 text-small font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                      step === s.step
-                        ? "border-primary bg-accent-soft text-primary-dark"
-                        : "border-border bg-surface text-subdued hover:bg-muted"
-                    }`}
-                    onClick={() => handleStepChange(s.step)}
-                  >
-                    {s.step}
-                  </button>
-                ))}
+          {requiresProcessingStage ? (
+            <>
+              {/* ── Processing stage card ── */}
+              <div className="rounded-control border border-border bg-surface p-4">
+                <div className="mb-3 flex items-baseline gap-3">
+                  <p className="text-micro font-semibold uppercase tracking-overline text-subdued">
+                    Processing stage
+                  </p>
+                  {steps.length > 0 ? (
+                    <span className="font-mono text-micro text-subdued">
+                      {steps.length} step{steps.length > 1 ? "s" : ""} · from equipment master
+                    </span>
+                  ) : null}
+                </div>
+                {!selectedRow ? (
+                  <p className="text-small italic text-subdued">Select equipment above to load its stages.</p>
+                ) : steps.length === 0 ? (
+                  <p className="text-small italic text-subdued">
+                    No processing steps recorded for this equipment.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {steps.map((s) => (
+                      <button
+                        key={s.step}
+                        type="button"
+                        disabled={disabled}
+                        aria-pressed={step === s.step}
+                        className={`rounded-pill border px-3 py-1.5 text-small font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                          step === s.step
+                            ? "border-primary bg-accent-soft text-primary-dark"
+                            : "border-border bg-surface text-subdued hover:bg-muted"
+                        }`}
+                        onClick={() => handleStepChange(s.step)}
+                      >
+                        {s.step}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* ── Critical process parameters card ── */}
-          <div className="rounded-control border border-border bg-surface p-4">
-            <div className="mb-3 flex items-baseline gap-3">
-              <p className="text-micro font-semibold uppercase tracking-overline text-subdued">
-                Critical process parameters
-              </p>
-              {step ? (
-                <span className="font-mono text-micro text-subdued">
-                  {name} · {step}
-                </span>
-              ) : null}
-            </div>
-            {!selectedRow ? (
-              <p className="text-small italic text-subdued">
-                Select equipment, then a stage, to record CPP values.
-              </p>
-            ) : !step ? (
-              <p className="text-small italic text-subdued">Select a stage above to load its parameters.</p>
-            ) : cppNames.length === 0 ? (
-              <p className="text-small italic text-subdued">No CPP recorded for this stage.</p>
-            ) : (
-              <>
-                <CppFieldsSection
-                  cppNames={cppNames}
-                  values={cppValues}
-                  disabled={disabled}
-                  onChange={handleCppChange}
-                />
-                <p className="mt-3 rounded-control border-l-2 border-primary bg-muted px-3 py-2 text-micro leading-5 text-subdued">
-                  Enter the value recorded for each critical process parameter during execution.
-                </p>
-              </>
-            )}
-          </div>
+              {/* ── Critical process parameters card ── */}
+              <div className="rounded-control border border-border bg-surface p-4">
+                <div className="mb-3 flex items-baseline gap-3">
+                  <p className="text-micro font-semibold uppercase tracking-overline text-subdued">
+                    Critical process parameters
+                  </p>
+                  {step ? (
+                    <span className="font-mono text-micro text-subdued">
+                      {name} · {step}
+                    </span>
+                  ) : null}
+                </div>
+                {!selectedRow ? (
+                  <p className="text-small italic text-subdued">
+                    Select equipment, then a stage, to record CPP values.
+                  </p>
+                ) : !step ? (
+                  <p className="text-small italic text-subdued">Select a stage above to load its parameters.</p>
+                ) : cppNames.length === 0 ? (
+                  <p className="text-small italic text-subdued">No CPP recorded for this stage.</p>
+                ) : (
+                  <>
+                    <CppFieldsSection
+                      cppNames={cppNames}
+                      values={cppValues}
+                      disabled={disabled}
+                      onChange={handleCppChange}
+                    />
+                    <p className="mt-3 rounded-control border-l-2 border-primary bg-muted px-3 py-2 text-micro leading-5 text-subdued">
+                      Enter the value recorded for each critical process parameter during execution.
+                    </p>
+                  </>
+                )}
+              </div>
+            </>
+          ) : null}
 
-          <div className="flex flex-wrap items-end justify-between gap-3 rounded-control border border-border bg-background/40 p-4">
-            <div className="space-y-1">
-              <label className="block text-micro font-semibold text-subdued">Lot</label>
-              <input
-                type="number"
-                min={1}
-                value={lot}
-                disabled={disabled}
-                className="h-9 w-24 rounded-control border border-border bg-surface px-2.5 text-small text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
-                onChange={(e) => setLot(e.target.value)}
-              />
-            </div>
-            <button
-              type="button"
-              disabled={disabled || !canAdd}
-              className="preview-button-secondary min-h-8 px-3"
-              onClick={handleAdd}
-            >
-              <Plus className="size-4" />
-              Add equipment
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={disabled || !canAdd}
+            className="preview-button-secondary min-h-8 px-3"
+            onClick={handleAdd}
+          >
+            <Plus className="size-4" />
+            Add equipment
+          </button>
         </>
       )}
-
-      {/* ── Lot + add ── */}
 
     </div>
   );

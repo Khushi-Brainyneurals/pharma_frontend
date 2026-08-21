@@ -1,5 +1,5 @@
 import { httpClient } from "../../../shared/api/httpClient";
-import type { StageParamsPayload } from "../types/stages.types";
+import type { StageParamsPayload, YieldReconciliationPayload } from "../types/stages.types";
 
 /**
  * GET the last-saved params for one stage within a document.
@@ -25,7 +25,7 @@ export async function getStageParams(
 export async function setStageParams(
   documentId: string,
   stageId: string,
-  payload: StageParamsPayload,
+  payload: StageParamsPayload | YieldReconciliationPayload,
 ): Promise<void> {
   await httpClient.post(
     `/api/bmr/documents/${encodeURIComponent(documentId)}/stages/${encodeURIComponent(stageId)}/params`,

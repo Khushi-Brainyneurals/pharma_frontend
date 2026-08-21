@@ -95,17 +95,17 @@ export function EditableMasterTable({
         <table className="w-full min-w-[960px] text-left text-small">
           <thead className="border-b border-border bg-muted text-micro uppercase tracking-overline text-subdued">
             <tr>
-              <th scope="col" className="w-16 px-3 py-3 font-semibold">
+              <th scope="col" className="w-16 px-2 py-3 font-semibold">
                 Sr. No.
               </th>
               {columns.map((column) => (
-                <th key={column.key} scope="col" className="px-3 py-3 font-semibold">
+                <th key={column.key} scope="col" className="px-2 py-3 font-semibold">
                   {column.label}
                   {column.required ? <span className="ml-1 text-danger">*</span> : null}
                 </th>
               ))}
               {canEdit ? (
-                <th scope="col" className="w-16 px-3 py-3 font-semibold">
+                <th scope="col" className="w-16 px-2 py-3 font-semibold">
                   <span className="sr-only">Actions</span>
                 </th>
               ) : null}
@@ -124,7 +124,7 @@ export function EditableMasterTable({
             ) : (
               rows.map((row, index) => (
                 <tr key={row.key} className="align-top">
-                  <td className="bg-muted/60 px-3 py-2 font-mono text-mono-sm text-subdued">
+                  <td className="bg-muted/60 px-2 py-2 font-mono text-mono-sm text-subdued">
                     <span className="inline-flex items-center gap-1.5">
                       {index + 1}
                       {row.isNew ? (
@@ -140,7 +140,7 @@ export function EditableMasterTable({
                     const raw = row.values[column.key] ?? "";
 
                     return (
-                      <td key={column.key} className={`px-3 py-2 ${column.minWidth ?? ""}`}>
+                      <td key={column.key} className={`px-2 py-2 ${column.minWidth ?? ""}`}>
                         {column.kind === "structured" ? (
                           <button
                             type="button"
@@ -182,7 +182,7 @@ export function EditableMasterTable({
                   })}
 
                   {canEdit ? (
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       {row.isNew || row.rowId === undefined ? (
                         <button
                           type="button"
@@ -293,9 +293,9 @@ function RowActions({
   const isLocked = disabled || isBusy;
 
   return (
-    <div className="min-w-[72px]">
+    <div className="min-w-[20px]">
       <div className="flex items-center gap-1">
-        {onUpdate ? (
+        {/* {onUpdate ? (
           <button
             type="button"
             aria-label={`Save row ${index + 1}`}
@@ -310,7 +310,7 @@ function RowActions({
               <Check className="size-4" aria-hidden="true" />
             )}
           </button>
-        ) : null}
+        ) : null} */}
         {onDelete ? (
           <button
             type="button"

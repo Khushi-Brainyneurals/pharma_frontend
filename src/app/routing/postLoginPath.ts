@@ -10,7 +10,7 @@ export function getPostLoginPath(role: UserRole) {
   }
 
   if (role === USER_ROLES.PREPARED_BY) {
-    return ROUTES.newDocument;
+    return ROUTES.statusBoard;
   }
 
   // Reviewer - QA authors master data and the Approver signs it off, so the

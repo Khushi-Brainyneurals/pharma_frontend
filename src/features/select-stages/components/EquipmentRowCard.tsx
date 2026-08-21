@@ -9,7 +9,7 @@ interface EquipmentRowCardProps {
 
 /** One already-added equipment entry, shown in the running list below the add form. */
 export function EquipmentRowCard({ item, disabled = false, onRemove }: EquipmentRowCardProps) {
-  const cppEntries = Object.entries(item.cpp_values).filter(([, value]) => value.trim() !== "");
+  const cppEntries = Object.entries(item.cpp_values ?? {}).filter(([, value]) => value.trim() !== "");
 
   return (
     <div className="flex flex-wrap items-start gap-3 rounded-control border border-border bg-surface px-4 py-3">
@@ -18,9 +18,6 @@ export function EquipmentRowCard({ item, disabled = false, onRemove }: Equipment
           <span className="text-small font-semibold text-text">{item.name}</span>
           <span className="rounded-pill bg-muted px-2 py-0.5 font-mono text-mono-sm text-subdued">
             {item.id}
-          </span>
-          <span className="rounded-pill bg-muted px-2 py-0.5 text-micro text-subdued">
-            Lot {item.lot}
           </span>
         </div>
         {item.processing_step ? (

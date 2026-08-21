@@ -9,7 +9,7 @@ import { NewDocumentSelectorPage } from "../features/new-document/pages/NewDocum
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { LoginStatesPage } from "../features/auth/pages/LoginStatesPage";
 import { ProtectedRoute } from "../features/auth/routing/ProtectedRoute";
-import { ProtectedPlaceholderPage } from "./ProtectedPlaceholderPage";
+import { DashboardPage } from "../features/dashboard/pages/DashboardPage";
 import { MASTER_DATA_ROUTES, ROUTES } from "./routing/routes";
 import { MasterDataHubPage } from "../features/master-data/pages/MasterDataHubPage";
 import { CompanyInfoPage } from "../features/master-data/pages/CompanyInfoPage";
@@ -34,7 +34,7 @@ export function App() {
           <Route path={ROUTES.documentPreview} element={<FormatPreviewPage />} />
           <Route path={ROUTES.documentCoverBom} element={<PreparedByCoverBomRoute><CoverBomPage /></PreparedByCoverBomRoute>} />
           <Route path={ROUTES.documentSelectStages} element={<SelectStagesPage />} />
-          <Route path={ROUTES.statusBoard} element={<ProtectedPlaceholderPage />} />
+          <Route path={ROUTES.statusBoard} element={<DashboardPage />} />
           <Route path={MASTER_DATA_ROUTES.hub} element={<MasterDataHubPage />} />
           <Route path={MASTER_DATA_ROUTES.company} element={<CompanyInfoPage />} />
           <Route path={MASTER_DATA_ROUTES.equipmentInstrument} element={<EquipmentInstrumentPage />} />
